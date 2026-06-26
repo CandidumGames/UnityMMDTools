@@ -1,0 +1,41 @@
+# Unity generated (should not appear inside a package, but guard anyway)
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]in/
+build/
+Build/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.userprefs
+*.suo
+
+# Generated solution/project files (Unity regenerates these at the project root,
+# not inside the package, but ignore if they ever appear here)
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.pidb
+*.booproj
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+*.log
+
+# Archives / build outputs (do not commit)
+*.apk
+*.aab
+*.unitypackage
+*.zip
+*.rar
+*.7z

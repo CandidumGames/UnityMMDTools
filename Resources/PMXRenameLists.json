@@ -1,0 +1,1258 @@
+{
+  "renameList": [
+    {
+      "from": "左親指０",
+      "to": "leftThumbMetacarpal"
+    },
+    {
+      "from": "左親指0",
+      "to": "leftThumbMetacarpal"
+    },
+    {
+      "from": "左親指１",
+      "to": "leftThumbProximal"
+    },
+    {
+      "from": "左親指1",
+      "to": "leftThumbProximal"
+    },
+    {
+      "from": "左親指２",
+      "to": "leftThumbDistal"
+    },
+    {
+      "from": "左親指2",
+      "to": "leftThumbDistal"
+    },
+    {
+      "from": "左人指１",
+      "to": "leftIndexProximal"
+    },
+    {
+      "from": "左人指1",
+      "to": "leftIndexProximal"
+    },
+    {
+      "from": "左人指２",
+      "to": "leftIndexIntermediate"
+    },
+    {
+      "from": "左人指2",
+      "to": "leftIndexIntermediate"
+    },
+    {
+      "from": "左人指３",
+      "to": "leftIndexDistal"
+    },
+    {
+      "from": "左人指3",
+      "to": "leftIndexDistal"
+    },
+    {
+      "from": "左人差指１",
+      "to": "leftIndexProximal"
+    },
+    {
+      "from": "左人差指1",
+      "to": "leftIndexProximal"
+    },
+    {
+      "from": "左人差指２",
+      "to": "leftIndexIntermediate"
+    },
+    {
+      "from": "左人差指2",
+      "to": "leftIndexIntermediate"
+    },
+    {
+      "from": "左人差指３",
+      "to": "leftIndexDistal"
+    },
+    {
+      "from": "左人差指3",
+      "to": "leftIndexDistal"
+    },
+    {
+      "from": "左中指１",
+      "to": "leftMiddleProximal"
+    },
+    {
+      "from": "左中指1",
+      "to": "leftMiddleProximal"
+    },
+    {
+      "from": "左中指２",
+      "to": "leftMiddleIntermediate"
+    },
+    {
+      "from": "左中指2",
+      "to": "leftMiddleIntermediate"
+    },
+    {
+      "from": "左中指３",
+      "to": "leftMiddleDistal"
+    },
+    {
+      "from": "左中指3",
+      "to": "leftMiddleDistal"
+    },
+    {
+      "from": "左薬指１",
+      "to": "leftRingProximal"
+    },
+    {
+      "from": "左薬指1",
+      "to": "leftRingProximal"
+    },
+    {
+      "from": "左薬指２",
+      "to": "leftRingIntermediate"
+    },
+    {
+      "from": "左薬指2",
+      "to": "leftRingIntermediate"
+    },
+    {
+      "from": "左薬指３",
+      "to": "leftRingDistal"
+    },
+    {
+      "from": "左薬指3",
+      "to": "leftRingDistal"
+    },
+    {
+      "from": "左小指１",
+      "to": "leftLittleProximal"
+    },
+    {
+      "from": "左小指1",
+      "to": "leftLittleProximal"
+    },
+    {
+      "from": "左小指２",
+      "to": "leftLittleIntermediate"
+    },
+    {
+      "from": "左小指2",
+      "to": "leftLittleIntermediate"
+    },
+    {
+      "from": "左小指３",
+      "to": "leftLittleDistal"
+    },
+    {
+      "from": "左小指3",
+      "to": "leftLittleDistal"
+    },
+    {
+      "from": "右親指０",
+      "to": "rightThumbMetacarpal"
+    },
+    {
+      "from": "右親指0",
+      "to": "rightThumbMetacarpal"
+    },
+    {
+      "from": "右親指１",
+      "to": "rightThumbProximal"
+    },
+    {
+      "from": "右親指1",
+      "to": "rightThumbProximal"
+    },
+    {
+      "from": "右親指２",
+      "to": "rightThumbDistal"
+    },
+    {
+      "from": "右親指2",
+      "to": "rightThumbDistal"
+    },
+    {
+      "from": "右人指１",
+      "to": "rightIndexProximal"
+    },
+    {
+      "from": "右人指1",
+      "to": "rightIndexProximal"
+    },
+    {
+      "from": "右人指２",
+      "to": "rightIndexIntermediate"
+    },
+    {
+      "from": "右人指2",
+      "to": "rightIndexIntermediate"
+    },
+    {
+      "from": "右人指３",
+      "to": "rightIndexDistal"
+    },
+    {
+      "from": "右人指3",
+      "to": "rightIndexDistal"
+    },
+    {
+      "from": "右人差指１",
+      "to": "rightIndexProximal"
+    },
+    {
+      "from": "右人差指1",
+      "to": "rightIndexProximal"
+    },
+    {
+      "from": "右人差指２",
+      "to": "rightIndexIntermediate"
+    },
+    {
+      "from": "右人差指2",
+      "to": "rightIndexIntermediate"
+    },
+    {
+      "from": "右人差指３",
+      "to": "rightIndexDistal"
+    },
+    {
+      "from": "右人差指3",
+      "to": "rightIndexDistal"
+    },
+    {
+      "from": "右中指１",
+      "to": "rightMiddleProximal"
+    },
+    {
+      "from": "右中指1",
+      "to": "rightMiddleProximal"
+    },
+    {
+      "from": "右中指２",
+      "to": "rightMiddleIntermediate"
+    },
+    {
+      "from": "右中指2",
+      "to": "rightMiddleIntermediate"
+    },
+    {
+      "from": "右中指３",
+      "to": "rightMiddleDistal"
+    },
+    {
+      "from": "右中指3",
+      "to": "rightMiddleDistal"
+    },
+    {
+      "from": "右薬指１",
+      "to": "rightRingProximal"
+    },
+    {
+      "from": "右薬指1",
+      "to": "rightRingProximal"
+    },
+    {
+      "from": "右薬指２",
+      "to": "rightRingIntermediate"
+    },
+    {
+      "from": "右薬指2",
+      "to": "rightRingIntermediate"
+    },
+    {
+      "from": "右薬指３",
+      "to": "rightRingDistal"
+    },
+    {
+      "from": "右薬指3",
+      "to": "rightRingDistal"
+    },
+    {
+      "from": "右小指１",
+      "to": "rightLittleProximal"
+    },
+    {
+      "from": "右小指1",
+      "to": "rightLittleProximal"
+    },
+    {
+      "from": "右小指２",
+      "to": "rightLittleIntermediate"
+    },
+    {
+      "from": "右小指2",
+      "to": "rightLittleIntermediate"
+    },
+    {
+      "from": "右小指３",
+      "to": "rightLittleDistal"
+    },
+    {
+      "from": "右小指3",
+      "to": "rightLittleDistal"
+    },
+    {
+      "from": "上半身３",
+      "to": "upperChest"
+    },
+    {
+      "from": "上半身3",
+      "to": "upperChest"
+    },
+    {
+      "from": "上半身２",
+      "to": "chest"
+    },
+    {
+      "from": "上半身2",
+      "to": "chest"
+    },
+    {
+      "from": "上半身",
+      "to": "spine"
+    },
+    {
+      "from": "下半身",
+      "to": "pelvis"
+    },
+    {
+      "from": "センター",
+      "to": "center"
+    },
+    {
+      "from": "ｾﾝﾀｰ",
+      "to": "center0"
+    },
+    {
+      "from": "グルーブ",
+      "to": "groove"
+    },
+    {
+      "from": "左目",
+      "to": "leftEye"
+    },
+    {
+      "from": "右目",
+      "to": "rightEye"
+    },
+    {
+      "from": "左肩",
+      "to": "leftShoulder"
+    },
+    {
+      "from": "左腕",
+      "to": "leftUpperArm"
+    },
+    {
+      "from": "左うで",
+      "to": "leftUpperArm"
+    },
+    {
+      "from": "左ひじ",
+      "to": "leftLowerArm"
+    },
+    {
+      "from": "左肘",
+      "to": "leftLowerArm"
+    },
+    {
+      "from": "左手首",
+      "to": "leftHand"
+    },
+    {
+      "from": "右肩",
+      "to": "rightShoulder"
+    },
+    {
+      "from": "右腕",
+      "to": "rightUpperArm"
+    },
+    {
+      "from": "右うで",
+      "to": "rightUpperArm"
+    },
+    {
+      "from": "右ひじ",
+      "to": "rightLowerArm"
+    },
+    {
+      "from": "右肘",
+      "to": "rightLowerArm"
+    },
+    {
+      "from": "右手首",
+      "to": "rightHand"
+    },
+    {
+      "from": "左足首",
+      "to": "leftFoot"
+    },
+    {
+      "from": "左つま先",
+      "to": "leftToes"
+    },
+    {
+      "from": "左足",
+      "to": "leftUpperLeg"
+    },
+    {
+      "from": "左ひざ",
+      "to": "leftLowerLeg"
+    },
+    {
+      "from": "左膝",
+      "to": "leftLowerLeg"
+    },
+    {
+      "from": "右足首",
+      "to": "rightFoot"
+    },
+    {
+      "from": "右つま先",
+      "to": "rightToes"
+    },
+    {
+      "from": "右足",
+      "to": "rightUpperLeg"
+    },
+    {
+      "from": "右ひざ",
+      "to": "rightLowerLeg"
+    },
+    {
+      "from": "右膝",
+      "to": "rightLowerLeg"
+    },
+    {
+      "from": "首",
+      "to": "neck"
+    },
+    {
+      "from": "頭",
+      "to": "head"
+    },
+    {
+      "from": "顎",
+      "to": "jaw"
+    },
+    {
+      "from": "あご",
+      "to": "jaw"
+    },
+    {
+      "from": "操作中心",
+      "to": "actuator"
+    },
+    {
+      "from": "全ての親",
+      "to": "root"
+    },
+    {
+      "from": "飾り",
+      "to": "accessories"
+    },
+    {
+      "from": "眼鏡",
+      "to": "glasses"
+    },
+    {
+      "from": "メガネ",
+      "to": "glasses"
+    },
+    {
+      "from": "髪",
+      "to": "hair"
+    },
+    {
+      "from": "スカート",
+      "to": "skirt"
+    },
+    {
+      "from": "ｽｶｰﾄ",
+      "to": "skirt"
+    },
+    {
+      "from": "マフラー",
+      "to": "muffler"
+    },
+    {
+      "from": "ﾏﾌﾗｰ",
+      "to": "muffler"
+    },
+    {
+      "from": "ネクタイ",
+      "to": "necktie"
+    },
+    {
+      "from": "ﾈｸﾀｲ",
+      "to": "necktie"
+    },
+    {
+      "from": "ジップ",
+      "to": "zip"
+    },
+    {
+      "from": "ｼﾞｯﾌﾟ",
+      "to": "zip"
+    },
+    {
+      "from": "ダミー",
+      "to": "dummy"
+    },
+    {
+      "from": "ﾀﾞﾐｰ",
+      "to": "dummy"
+    },
+    {
+      "from": "モミアゲ",
+      "to": "sideburn"
+    },
+    {
+      "from": "もみあげ",
+      "to": "sideburn"
+    },
+    {
+      "from": "あほ毛",
+      "to": "ahoge"
+    },
+    {
+      "from": "アホ毛",
+      "to": "ahoge"
+    },
+    {
+      "from": "腰",
+      "to": "hips"
+    },
+    {
+      "from": "小指",
+      "to": "little"
+    },
+    {
+      "from": "薬指",
+      "to": "ring"
+    },
+    {
+      "from": "中指",
+      "to": "middle"
+    },
+    {
+      "from": "人指",
+      "to": "index"
+    },
+    {
+      "from": "人差指",
+      "to": "index"
+    },
+    {
+      "from": "親指",
+      "to": "thumb"
+    },
+    {
+      "from": "袖",
+      "to": "sleeve"
+    },
+    {
+      "from": "肩",
+      "to": "shoulder"
+    },
+    {
+      "from": "腕",
+      "to": "upperArm"
+    },
+    {
+      "from": "うで",
+      "to": "upperArm"
+    },
+    {
+      "from": "捩",
+      "to": "twist"
+    },
+    {
+      "from": "ひじ",
+      "to": "lowerArm"
+    },
+    {
+      "from": "肘",
+      "to": "lowerArm"
+    },
+    {
+      "from": "手捩",
+      "to": "handTwist"
+    },
+    {
+      "from": "手首",
+      "to": "hand"
+    },
+    {
+      "from": "手",
+      "to": "hand"
+    },
+    {
+      "from": "胸",
+      "to": "breast"
+    },
+    {
+      "from": "足首",
+      "to": "foot"
+    },
+    {
+      "from": "足",
+      "to": "upperLeg"
+    },
+    {
+      "from": "ひざ",
+      "to": "lowerLeg"
+    },
+    {
+      "from": "膝",
+      "to": "lowerLeg"
+    },
+    {
+      "from": "つま先",
+      "to": "toes"
+    },
+    {
+      "from": "裾",
+      "to": "hem"
+    },
+    {
+      "from": "歯",
+      "to": "tooth"
+    },
+    {
+      "from": "舌",
+      "to": "tongue"
+    },
+    {
+      "from": "涙",
+      "to": "tear"
+    },
+    {
+      "from": "両目",
+      "to": "eyes"
+    },
+    {
+      "from": "目",
+      "to": "eye"
+    },
+    {
+      "from": "右",
+      "to": "right"
+    },
+    {
+      "from": "左",
+      "to": "left"
+    },
+    {
+      "from": "前",
+      "to": "front"
+    },
+    {
+      "from": "後ろ",
+      "to": "back"
+    },
+    {
+      "from": "後",
+      "to": "back"
+    },
+    {
+      "from": "中",
+      "to": "middle"
+    },
+    {
+      "from": "横",
+      "to": "side"
+    },
+    {
+      "from": "上",
+      "to": "upper"
+    },
+    {
+      "from": "下",
+      "to": "lower"
+    },
+    {
+      "from": "親",
+      "to": "parent"
+    },
+    {
+      "from": "先",
+      "to": "tip"
+    },
+    {
+      "from": "０",
+      "to": "0"
+    },
+    {
+      "from": "１",
+      "to": "1"
+    },
+    {
+      "from": "２",
+      "to": "2"
+    },
+    {
+      "from": "３",
+      "to": "3"
+    },
+    {
+      "from": "４",
+      "to": "4"
+    },
+    {
+      "from": "５",
+      "to": "5"
+    },
+    {
+      "from": "６",
+      "to": "6"
+    },
+    {
+      "from": "７",
+      "to": "7"
+    },
+    {
+      "from": "８",
+      "to": "8"
+    },
+    {
+      "from": "９",
+      "to": "9"
+    },
+    {
+      "from": "Ａ",
+      "to": "A"
+    },
+    {
+      "from": "Ｂ",
+      "to": "B"
+    },
+    {
+      "from": "Ｃ",
+      "to": "C"
+    },
+    {
+      "from": "Ｄ",
+      "to": "D"
+    },
+    {
+      "from": "Ｅ",
+      "to": "E"
+    },
+    {
+      "from": "Ｆ",
+      "to": "F"
+    },
+    {
+      "from": "Ｇ",
+      "to": "G"
+    },
+    {
+      "from": "Ｈ",
+      "to": "H"
+    },
+    {
+      "from": "Ｉ",
+      "to": "I"
+    },
+    {
+      "from": "Ｊ",
+      "to": "J"
+    },
+    {
+      "from": "Ｋ",
+      "to": "K"
+    },
+    {
+      "from": "Ｌ",
+      "to": "L"
+    },
+    {
+      "from": "Ｍ",
+      "to": "M"
+    },
+    {
+      "from": "Ｎ",
+      "to": "N"
+    },
+    {
+      "from": "ａ",
+      "to": "a"
+    },
+    {
+      "from": "ｂ",
+      "to": "b"
+    },
+    {
+      "from": "ｃ",
+      "to": "c"
+    },
+    {
+      "from": "ｄ",
+      "to": "d"
+    },
+    {
+      "from": "ｅ",
+      "to": "e"
+    },
+    {
+      "from": "ｆ",
+      "to": "f"
+    },
+    {
+      "from": "ｇ",
+      "to": "g"
+    },
+    {
+      "from": "ｈ",
+      "to": "h"
+    },
+    {
+      "from": "ｉ",
+      "to": "i"
+    },
+    {
+      "from": "ｊ",
+      "to": "j"
+    },
+    {
+      "from": "ｋ",
+      "to": "k"
+    },
+    {
+      "from": "ｌ",
+      "to": "l"
+    },
+    {
+      "from": "ｍ",
+      "to": "m"
+    },
+    {
+      "from": "ｎ",
+      "to": "n"
+    },
+    {
+      "from": "＋",
+      "to": "+"
+    },
+    {
+      "from": "－",
+      "to": "-"
+    },
+    {
+      "from": "＿",
+      "to": "_"
+    },
+    {
+      "from": "／",
+      "to": "/"
+    }
+  ],
+  "morphRenameList": [
+    {
+      "from": "まばたき左",
+      "to": "blinkLeft"
+    },
+    {
+      "from": "左まばたき",
+      "to": "leftBlink"
+    },
+    {
+      "from": "まばたき右",
+      "to": "blinkRight"
+    },
+    {
+      "from": "右まばたき",
+      "to": "rightBlink"
+    },
+    {
+      "from": "ウィンク左",
+      "to": "winkLeft"
+    },
+    {
+      "from": "ウインク左",
+      "to": "winkLeft0"
+    },
+    {
+      "from": "ｳｨﾝｸ左",
+      "to": "winkLeft1"
+    },
+    {
+      "from": "ｳｲﾝｸ左",
+      "to": "winkLeft2"
+    },
+    {
+      "from": "ウィンク右",
+      "to": "winkRight"
+    },
+    {
+      "from": "ウインク右",
+      "to": "winkRight0"
+    },
+    {
+      "from": "ｳｨﾝｸ右",
+      "to": "winkRight1"
+    },
+    {
+      "from": "ｳｲﾝｸ右",
+      "to": "winkRight2"
+    },
+    {
+      "from": "左ウィンク",
+      "to": "leftWink"
+    },
+    {
+      "from": "左ウインク",
+      "to": "leftWink0"
+    },
+    {
+      "from": "右ウィンク",
+      "to": "rightWink"
+    },
+    {
+      "from": "右ウインク",
+      "to": "rightWink0"
+    },
+    {
+      "from": "まばたき",
+      "to": "blink"
+    },
+    {
+      "from": "ウィンク",
+      "to": "wink"
+    },
+    {
+      "from": "ウインク",
+      "to": "wink0"
+    },
+    {
+      "from": "ｳｲﾝｸ",
+      "to": "wink1"
+    },
+    {
+      "from": "ｳｨﾝｸ",
+      "to": "wink2"
+    },
+    {
+      "from": "笑い",
+      "to": "happy"
+    },
+    {
+      "from": "笑う",
+      "to": "happy0"
+    },
+    {
+      "from": "にっこり",
+      "to": "happy1"
+    },
+    {
+      "from": "にこり",
+      "to": "happy2"
+    },
+    {
+      "from": "怒り",
+      "to": "angry"
+    },
+    {
+      "from": "困る",
+      "to": "sad"
+    },
+    {
+      "from": "悲しい",
+      "to": "sad0"
+    },
+    {
+      "from": "なごみ",
+      "to": "relaxed"
+    },
+    {
+      "from": "リラックス",
+      "to": "relaxed0"
+    },
+    {
+      "from": "びっくり",
+      "to": "surprised"
+    },
+    {
+      "from": "ビックリ",
+      "to": "surprised0"
+    },
+    {
+      "from": "驚き",
+      "to": "surprised1"
+    },
+    {
+      "from": "上を見る",
+      "to": "lookUp"
+    },
+    {
+      "from": "下を見る",
+      "to": "lookDown"
+    },
+    {
+      "from": "左を見る",
+      "to": "lookLeft"
+    },
+    {
+      "from": "右を見る",
+      "to": "lookRight"
+    },
+    {
+      "from": "目上",
+      "to": "eyesUp"
+    },
+    {
+      "from": "目下",
+      "to": "eyesDown"
+    },
+    {
+      "from": "目左",
+      "to": "eyesLeft"
+    },
+    {
+      "from": "目右",
+      "to": "eyesRight"
+    },
+    {
+      "from": "真面目",
+      "to": "neutral"
+    },
+    {
+      "from": "普通",
+      "to": "common"
+    },
+    {
+      "from": "あ",
+      "to": "aa"
+    },
+    {
+      "from": "い",
+      "to": "ih"
+    },
+    {
+      "from": "う",
+      "to": "ou"
+    },
+    {
+      "from": "え",
+      "to": "ee"
+    },
+    {
+      "from": "お",
+      "to": "oh"
+    },
+    {
+      "from": "ア",
+      "to": "aa0"
+    },
+    {
+      "from": "イ",
+      "to": "ih0"
+    },
+    {
+      "from": "ウ",
+      "to": "ou0"
+    },
+    {
+      "from": "エ",
+      "to": "ee0"
+    },
+    {
+      "from": "オ",
+      "to": "oh0"
+    },
+    {
+      "from": "コッチミンナ",
+      "to": "dontLook"
+    },
+    {
+      "from": "メガネ",
+      "to": "glasses"
+    },
+    {
+      "from": "めがね",
+      "to": "glasses0"
+    },
+    {
+      "from": "眼鏡",
+      "to": "glasses1"
+    },
+    {
+      "from": "にやり",
+      "to": "grinning"
+    },
+    {
+      "from": "てへぺろ",
+      "to": "tehepero"
+    },
+    {
+      "from": "ぺろっ",
+      "to": "pero"
+    },
+    {
+      "from": "にやける",
+      "to": "smirk"
+    },
+    {
+      "from": "まゆ",
+      "to": "brow"
+    },
+    {
+      "from": "ひどく",
+      "to": "very"
+    },
+    {
+      "from": "大きく",
+      "to": "big"
+    },
+    {
+      "from": "太く",
+      "to": "thick"
+    },
+    {
+      "from": "短く",
+      "to": "thin"
+    },
+    {
+      "from": "繊細",
+      "to": "delicate"
+    },
+    {
+      "from": "内側へ",
+      "to": "toInner"
+    },
+    {
+      "from": "前へ",
+      "to": "toFront"
+    },
+    {
+      "from": "回転",
+      "to": "rotate"
+    },
+    {
+      "from": "拡大",
+      "to": "expansion"
+    },
+    {
+      "from": "縮小",
+      "to": "reduction"
+    },
+    {
+      "from": "瞳",
+      "to": "pupil"
+    },
+    {
+      "from": "目",
+      "to": "eye"
+    },
+    {
+      "from": "はぅ",
+      "to": "hau"
+    },
+    {
+      "from": "むぅ",
+      "to": "muu"
+    },
+    {
+      "from": "むっ",
+      "to": "mu"
+    },
+    {
+      "from": "ちゅう",
+      "to": "kiss"
+    },
+    {
+      "from": "涙",
+      "to": "tear"
+    },
+    {
+      "from": "きゃっ",
+      "to": "shriek"
+    },
+    {
+      "from": "消す",
+      "to": "off"
+    },
+    {
+      "from": "消し",
+      "to": "off0"
+    },
+    {
+      "from": "消",
+      "to": "off1"
+    },
+    {
+      "from": "キリッ",
+      "to": "kiri"
+    },
+    {
+      "from": "ｷﾘｯ",
+      "to": "kiri"
+    },
+    {
+      "from": "ω",
+      "to": "omega"
+    },
+    {
+      "from": "▲",
+      "to": "triangle"
+    },
+    {
+      "from": "∧",
+      "to": "closedTriangle"
+    },
+    {
+      "from": "■",
+      "to": "rect"
+    },
+    {
+      "from": "□",
+      "to": "rect0"
+    },
+    {
+      "from": "上",
+      "to": "up"
+    },
+    {
+      "from": "下",
+      "to": "down"
+    },
+    {
+      "from": "左",
+      "to": "left"
+    },
+    {
+      "from": "右",
+      "to": "right"
+    },
+    {
+      "from": "細目",
+      "to": "thinEyes"
+    },
+    {
+      "from": "丸目",
+      "to": "roundEyes"
+    },
+    {
+      "from": "はちゅ目",
+      "to": "hachuEyes"
+    },
+    {
+      "from": "じと目",
+      "to": "jitoEyes"
+    },
+    {
+      "from": "つり目",
+      "to": "tsuriEyes"
+    },
+    {
+      "from": "たれ目",
+      "to": "tareEyes"
+    },
+    {
+      "from": "縦潰れ",
+      "to": "vert"
+    },
+    {
+      "from": "横潰れ",
+      "to": "horz"
+    }
+  ]
+}

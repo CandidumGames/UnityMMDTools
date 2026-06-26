@@ -1,0 +1,28 @@
+{
+    "name": "UMT.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:771f49a373744d64a9b8aca7b36272be",
+        "GUID:973daf09cb21c4e43ad90e8532e23580",
+        "GUID:d8b63aba1907145bea998dd612889d6b",
+        "GUID:e0cd26848372d4e5c891c569017e11f1",
+        "GUID:e7f0f8dffe955d640bbc76d1d4f4986e"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "jp.lilxyzw.liltoon",
+            "expression": "2.0.0",
+            "define": "LILTOON_AVAILABLE"
+        }
+    ],
+    "noEngineReferences": false
+}

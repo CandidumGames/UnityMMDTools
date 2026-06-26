@@ -1,0 +1,241 @@
+{
+  "requiredHumanBones": [
+    "Hips",
+    "Spine",
+    "Head",
+    "LeftUpperLeg",
+    "LeftLowerLeg",
+    "LeftFoot",
+    "RightUpperLeg",
+    "RightLowerLeg",
+    "RightFoot",
+    "LeftUpperArm",
+    "LeftLowerArm",
+    "LeftHand",
+    "RightUpperArm",
+    "RightLowerArm",
+    "RightHand"
+  ],
+  "mappings": [
+    {
+      "humanBone": "Hips",
+      "sourceBoneName": "hips"
+    },
+    {
+      "humanBone": "Spine",
+      "sourceBoneName": "spine"
+    },
+    {
+      "humanBone": "Chest",
+      "sourceBoneName": "chest"
+    },
+    {
+      "humanBone": "UpperChest",
+      "sourceBoneName": "upperChest"
+    },
+    {
+      "humanBone": "Neck",
+      "sourceBoneName": "neck"
+    },
+    {
+      "humanBone": "Head",
+      "sourceBoneName": "head"
+    },
+    {
+      "humanBone": "Jaw",
+      "sourceBoneName": "jaw"
+    },
+    {
+      "humanBone": "LeftEye",
+      "sourceBoneName": "leftEye"
+    },
+    {
+      "humanBone": "RightEye",
+      "sourceBoneName": "rightEye"
+    },
+    {
+      "humanBone": "LeftShoulder",
+      "sourceBoneName": "leftShoulder"
+    },
+    {
+      "humanBone": "RightShoulder",
+      "sourceBoneName": "rightShoulder"
+    },
+    {
+      "humanBone": "LeftUpperArm",
+      "sourceBoneName": "leftUpperArm"
+    },
+    {
+      "humanBone": "RightUpperArm",
+      "sourceBoneName": "rightUpperArm"
+    },
+    {
+      "humanBone": "LeftLowerArm",
+      "sourceBoneName": "leftLowerArm"
+    },
+    {
+      "humanBone": "RightLowerArm",
+      "sourceBoneName": "rightLowerArm"
+    },
+    {
+      "humanBone": "LeftHand",
+      "sourceBoneName": "leftHand"
+    },
+    {
+      "humanBone": "RightHand",
+      "sourceBoneName": "rightHand"
+    },
+    {
+      "humanBone": "LeftUpperLeg",
+      "sourceBoneName": "leftUpperLeg"
+    },
+    {
+      "humanBone": "RightUpperLeg",
+      "sourceBoneName": "rightUpperLeg"
+    },
+    {
+      "humanBone": "LeftLowerLeg",
+      "sourceBoneName": "leftLowerLeg"
+    },
+    {
+      "humanBone": "RightLowerLeg",
+      "sourceBoneName": "rightLowerLeg"
+    },
+    {
+      "humanBone": "LeftFoot",
+      "sourceBoneName": "leftFoot"
+    },
+    {
+      "humanBone": "RightFoot",
+      "sourceBoneName": "rightFoot"
+    },
+    {
+      "humanBone": "LeftToes",
+      "sourceBoneName": "leftToes"
+    },
+    {
+      "humanBone": "RightToes",
+      "sourceBoneName": "rightToes"
+    },
+    {
+      "humanBone": "LeftThumbProximal",
+      "sourceBoneName": "leftThumbMetacarpal"
+    },
+    {
+      "humanBone": "LeftThumbIntermediate",
+      "sourceBoneName": "leftThumbProximal"
+    },
+    {
+      "humanBone": "LeftThumbDistal",
+      "sourceBoneName": "leftThumbDistal"
+    },
+    {
+      "humanBone": "RightThumbProximal",
+      "sourceBoneName": "rightThumbMetacarpal"
+    },
+    {
+      "humanBone": "RightThumbIntermediate",
+      "sourceBoneName": "rightThumbProximal"
+    },
+    {
+      "humanBone": "RightThumbDistal",
+      "sourceBoneName": "rightThumbDistal"
+    },
+    {
+      "humanBone": "LeftIndexProximal",
+      "sourceBoneName": "leftIndexProximal"
+    },
+    {
+      "humanBone": "LeftIndexIntermediate",
+      "sourceBoneName": "leftIndexIntermediate"
+    },
+    {
+      "humanBone": "LeftIndexDistal",
+      "sourceBoneName": "leftIndexDistal"
+    },
+    {
+      "humanBone": "RightIndexProximal",
+      "sourceBoneName": "rightIndexProximal"
+    },
+    {
+      "humanBone": "RightIndexIntermediate",
+      "sourceBoneName": "rightIndexIntermediate"
+    },
+    {
+      "humanBone": "RightIndexDistal",
+      "sourceBoneName": "rightIndexDistal"
+    },
+    {
+      "humanBone": "LeftMiddleProximal",
+      "sourceBoneName": "leftMiddleProximal"
+    },
+    {
+      "humanBone": "LeftMiddleIntermediate",
+      "sourceBoneName": "leftMiddleIntermediate"
+    },
+    {
+      "humanBone": "LeftMiddleDistal",
+      "sourceBoneName": "leftMiddleDistal"
+    },
+    {
+      "humanBone": "RightMiddleProximal",
+      "sourceBoneName": "rightMiddleProximal"
+    },
+    {
+      "humanBone": "RightMiddleIntermediate",
+      "sourceBoneName": "rightMiddleIntermediate"
+    },
+    {
+      "humanBone": "RightMiddleDistal",
+      "sourceBoneName": "rightMiddleDistal"
+    },
+    {
+      "humanBone": "LeftRingProximal",
+      "sourceBoneName": "leftRingProximal"
+    },
+    {
+      "humanBone": "LeftRingIntermediate",
+      "sourceBoneName": "leftRingIntermediate"
+    },
+    {
+      "humanBone": "LeftRingDistal",
+      "sourceBoneName": "leftRingDistal"
+    },
+    {
+      "humanBone": "RightRingProximal",
+      "sourceBoneName": "rightRingProximal"
+    },
+    {
+      "humanBone": "RightRingIntermediate",
+      "sourceBoneName": "rightRingIntermediate"
+    },
+    {
+      "humanBone": "RightRingDistal",
+      "sourceBoneName": "rightRingDistal"
+    },
+    {
+      "humanBone": "LeftLittleProximal",
+      "sourceBoneName": "leftLittleProximal"
+    },
+    {
+      "humanBone": "LeftLittleIntermediate",
+      "sourceBoneName": "leftLittleIntermediate"
+    },
+    {
+      "humanBone": "LeftLittleDistal",
+      "sourceBoneName": "leftLittleDistal"
+    },
+    {
+      "humanBone": "RightLittleProximal",
+      "sourceBoneName": "rightLittleProximal"
+    },
+    {
+      "humanBone": "RightLittleIntermediate",
+      "sourceBoneName": "rightLittleIntermediate"
+    },
+    {
+      "humanBone": "RightLittleDistal",
+      "sourceBoneName": "rightLittleDistal"
+    }
+  ]
+}

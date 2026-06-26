@@ -1,0 +1,23 @@
+# Changelog
+All notable changes to this package will be documented in this file.
+
+The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
+and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+
+## [0.1.0] - 2026-06-23
+
+First release of Unity MMD Tools (UMT).
+
+### Added
+- PMX 2.0 model import (with PMX 2.1 read compatibility): meshes, materials, bones with bindposes, and
+  vertex-morph blend shapes, generated as sub-assets of the imported `.pmx`.
+- MMD runtime: `MMDTransformManager` for MMD transform order, constraints, and IK solving, plus an
+  optional Bullet-backed `MMDPhysicsManager` for rigid bodies and joints.
+- VMD motion conversion to `AnimationClip` with runtime-solved and baked-FK modes, optional physics
+  baking, and morph/IK-toggle curves.
+- Optional humanoid `Avatar` generation for retargeting.
+- Japanese (Kawazu) and Chinese (PinyinNet) name romanization for materials, bones, and morphs.
+- BMP and TGA texture decoding in addition to Unity's built-in PNG/JPG support.
+- Native physics plugin for Windows x64 and Android arm64-v8a.
+- Editor entry points: scripted importers for `.pmx` and `.vmd` assets, plus **Tools ▸ UMT ▸ VMD Clip
+  Converter** and **Tools ▸ UMT ▸ Create Default Resources** menu commands.

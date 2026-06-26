@@ -1,0 +1,39 @@
+{
+  "head": [
+    "head"
+  ],
+  "skirt": [
+    "skirt",
+    "dress"
+  ],
+  "ribbon": [
+    "ribbon",
+    "necktie",
+    "muffler",
+    "hem"
+  ],
+  "breast": [
+    "breast",
+    "bust"
+  ],
+  "longHair": [
+    "hair",
+    "tail"
+  ],
+  "shortHair": [
+    "burns",
+    "palpus"
+  ],
+  "sideHair": [
+    "sidehair",
+    "ear"
+  ],
+  "frontHair": [
+    "fronthair",
+    "hairfront",
+    "bangs"
+  ],
+  "tail": [
+    "tail"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+	"name": "com.candidumgames.unitymmdtools",
+	"displayName":"Unity MMD Tools",
+	"version": "0.1.0",
+	"unity": "2022.3",
+	"unityRelease": "22f1",
+	"description": "Unity MMD Tools (UMT) is a toolkit for maximally reproducing MikuMikuDance (MMD) behaviour in Unity.",
+	"dependencies": {
+		"com.unity.burst": "1.8.4",
+		"com.unity.collections": "2.1.4",
+		"com.unity.mathematics": "1.3.3",
+		"com.unity.nuget.newtonsoft-json": "3.2.1"
+	},
+	"license": "MIT",
+	"documentationUrl": "https://github.com/CandidumGames/UnityMMDTools/wiki",
+	"keywords": [
+		"Animation",
+		"AssetImporter",
+		"Format",
+		"Utility"
+	],
+	"author": {
+		"name": "Candidum Games",
+		"url": "http://www.candidumgames.com",
+		"email": "info@candidumgames.com"
+	}
+}
