@@ -13,6 +13,9 @@ namespace UMT
     public static class PMXMaterialBuilder
     {
         private const string k_LilToonMultiShaderName = "_lil/lilToonMulti";
+        // lilToon's "Multi" shader has no outline pass; the outline pass only exists in the separate
+        // outline variant. lilToon itself swaps to this shader when _UseOutline is enabled.
+        private const string k_LilToonMultiOutlineShaderName = "Hidden/lilToonMultiOutline";
         private const string k_URPUnlitFallbackShaderName = "Universal Render Pipeline/Unlit";
         private const string k_BuiltInUnlitShaderName = "Unlit/Texture";
         private const string k_BuiltInUnlitTransparentShaderName = "Unlit/Transparent";
@@ -29,6 +32,7 @@ namespace UMT
         private static readonly int s_UseOutlineProperty = Shader.PropertyToID("_UseOutline");
         private static readonly int s_OutlineWidthProperty = Shader.PropertyToID("_OutlineWidth");
         private static readonly int s_OutlineColorProperty = Shader.PropertyToID("_OutlineColor");
+        private static readonly int s_OutlineEnableLightingProperty = Shader.PropertyToID("_OutlineEnableLighting");
         private static readonly int s_MatcapTextureProperty = Shader.PropertyToID("_MatcapTex");
         private static readonly int s_MatcapColorProperty = Shader.PropertyToID("_MatcapColor");
         private static readonly int s_LilToonMatcapTextureProperty = Shader.PropertyToID("_MatCapTex");
@@ -57,7 +61,12 @@ namespace UMT
         private const string k_LilToonRequireUV2Keyword = "_REQUIRE_UV2";
         private const string k_UnityUIClipRectKeyword = "UNITY_UI_CLIP_RECT";
 
+        // Final outline thickness in Unity meters per unit of PMX edge size. ~0.03 PMX units scaled by
+        // the MMD-to-Unity unit factor (0.08) lands near this value, giving an MMD-like thin edge.
         private const float k_OutlineWidthScale = 0.0025f;
+        // lilToon multiplies _OutlineWidth by 0.01 internally (see lilGetOutlineWidth), so the slider unit
+        // is 1.0 == 1cm of object-space displacement. Convert our meter width back into that slider unit.
+        private const float k_LilToonOutlineWidthUnit = 0.01f;
 
         /// <summary>Builds one Unity material per PMX material, resolving textures and transparency.</summary>
         /// <param name="model">PMX model providing material definitions.</param>
@@ -76,6 +85,14 @@ namespace UMT
                 Texture2D sphereTexture = GetTexture(texturesByIndex, pmxMaterial.sphereTextureIndex);
                 string renamedName = pmxMaterial.renamedName.ToString();
                 string materialName = PMXUtilities.SanitizeFileName(renamedName, i);
+
+                if (options.materialOverrides != null
+                    && options.materialOverrides.TryGetValue(materialName, out Material overrideMaterial)
+                    && overrideMaterial != null)
+                {
+                    materials.Add(overrideMaterial);
+                    continue;
+                }
 
                 (bool isBelowAlphaCoverageThreshold, float alphaCoverage, bool anyPixelOpaque) alphaDetection = DetectAlphaCoverage(
                         mainTexture,
@@ -176,9 +193,14 @@ namespace UMT
 
             SetFloatIfPresent(material, s_DoubleSidedProperty, isDoubleSided ? 1.0f : 0.0f);
 
+            // The outline pass itself lives in the outline shader variant (selected in GetShader). These
+            // properties only take effect when that variant is assigned. _UseOutline keeps lilToon's own
+            // editor swap logic consistent if the material is later re-set up.
             SetFloatIfPresent(material, s_UseOutlineProperty, drawsEdge ? 1.0f : 0.0f);
-            SetFloatIfPresent(material, s_OutlineWidthProperty, drawsEdge ? pmxMaterial.edgeSize * k_OutlineWidthScale : 0.0f);
+            SetFloatIfPresent(material, s_OutlineWidthProperty, drawsEdge ? pmxMaterial.edgeSize * k_OutlineWidthScale / k_LilToonOutlineWidthUnit : 0.0f);
             SetColorIfPresent(material, s_OutlineColorProperty, pmxMaterial.edgeColor);
+            // MMD edges are flat: keep the outline color unaffected by scene lighting.
+            SetFloatIfPresent(material, s_OutlineEnableLightingProperty, 0.0f);
             SetKeywordIfPresent(material, k_LilToonRequireUV2Keyword, true);
         }
 
@@ -239,7 +261,7 @@ namespace UMT
         private static Material BuildMaterial(PMXMaterial pmxMaterial, Texture2D mainTexture, Texture2D sphereTexture, string materialName, bool transparent, bool transparentWithZWrite)
         {
             bool drawsEdge = (pmxMaterial.drawingFlags & PMXMaterial.DrawingFlags.DrawEdge) != 0;
-            Shader shader = GetShader(transparent, out ShaderKind shaderKind);
+            Shader shader = GetShader(transparent, drawsEdge, out ShaderKind shaderKind);
             if (shader == null)
             {
                 Debug.LogError("No compatible PMX material shader was found.");
@@ -293,9 +315,11 @@ namespace UMT
             BuiltIn,
         }
 
-        private static Shader GetShader(bool transparent, out ShaderKind shaderKind)
+        private static Shader GetShader(bool transparent, bool drawsEdge, out ShaderKind shaderKind)
         {
-            Shader lilToonShader = Shader.Find(k_LilToonMultiShaderName);
+            // Edge-drawing materials need the outline-capable lilToon variant; the plain Multi shader has no
+            // outline pass. URP/built-in fallbacks have no outline support, so edges are dropped there.
+            Shader lilToonShader = Shader.Find(drawsEdge ? k_LilToonMultiOutlineShaderName : k_LilToonMultiShaderName);
             if (lilToonShader != null)
             {
                 shaderKind = ShaderKind.LilToon;

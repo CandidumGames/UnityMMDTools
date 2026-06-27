@@ -4,6 +4,29 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-06-28
+
+### Added
+- Per-slot external material overrides. `PMXImportOptions.materialOverrides` supplies a `Material` per
+  generated slot instead of a generated one, surfaced in the importer inspector via a new **Materials**
+  tab (Standard/Override creation modes, per-slot remap list, and an "Extract Materials..." action).
+- Tabbed PMX importer inspector (Model, Rig, Animation, Materials), split into per-tab editors under
+  `Editor/Importers/`.
+- Camera clip frame-rate selection (30 / 60 / 120 fps) in the VMD Clip Converter. The native 30 fps VMD
+  camera timeline is sub-sampled at higher integer multiples, preserving real-time duration and MMD hard
+  cuts.
+- `MMDConstants.k_VMDNativeFrameRate` (30 fps) constant.
+
+### Changed
+- Edge-drawing PMX materials now use lilToon's outline-capable variant (`Hidden/lilToonMultiOutline`);
+  the plain `lilToonMulti` shader has no outline pass. URP and built-in fallbacks still drop edges.
+- Reorganized editor scripted importers and inspectors into `Editor/Importers/`, with shared VMD
+  progress reporting extracted to `VMDClipProgress`.
+
+### Fixed
+- lilToon outline width now converts correctly into lilToon's 1 cm slider unit (previously over-scaled),
+  and outline color is no longer affected by scene lighting, matching MMD's flat edges.
+
 ## [0.1.0] - 2026-06-23
 
 First release of Unity MMD Tools (UMT).

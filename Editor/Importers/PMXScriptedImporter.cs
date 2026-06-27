@@ -18,11 +18,23 @@ namespace UMT.Editor
         public const string k_AlphaDetectorShaderPath = "Packages/com.candidumgames.unitymmdtools/Shaders/AlphaDetector.compute";
         [SerializeField] private bool m_CreateAvatar = false;
         [SerializeField] private bool m_GenerateDebugData = false;
+        [SerializeField] private PMXMaterialCreationMode m_MaterialCreationMode = PMXMaterialCreationMode.Standard;
         [SerializeField] private List<VMDAnimation> m_VMDAnimations = new List<VMDAnimation>();
         [SerializeField] private float m_VMDFrameRate = 30.0f;
         [SerializeField] private bool m_VMDBakeIKToFK = true;
         [SerializeField] private bool m_VMDBakePhysicsToFK = false;
         [SerializeField] private float m_VMDPhysicsWarmUpDuration = 5.0f;
+
+        /// <summary>
+        /// Declares that generated <see cref="Material"/> sub-assets can be remapped to external assets,
+        /// enabling the Materials tab's per-slot overrides and "Extract Materials..." action.
+        /// </summary>
+        /// <param name="type">Sub-asset type being queried for remap support.</param>
+        /// <returns>True for <see cref="Material"/>; otherwise false.</returns>
+        public override bool SupportsRemappedAssetType(System.Type type)
+        {
+            return type == typeof(Material);
+        }
 
         /// <summary>
         /// Imports the <c>.pmx</c> asset: builds the model, materials, meshes, MMD runtime components, and optional
@@ -45,6 +57,19 @@ namespace UMT.Editor
                 timingCallback = timingCollector.RecordTiming,
             };
 
+            if (m_MaterialCreationMode == PMXMaterialCreationMode.Override)
+            {
+                Dictionary<string, Material> materialOverrides = new Dictionary<string, Material>();
+                foreach (KeyValuePair<AssetImporter.SourceAssetIdentifier, Object> remap in GetExternalObjectMap())
+                {
+                    if (remap.Key.type == typeof(Material) && remap.Value is Material overrideMaterial && overrideMaterial != null)
+                    {
+                        materialOverrides[remap.Key.name] = overrideMaterial;
+                    }
+                }
+                options.materialOverrides = materialOverrides;
+            }
+
             PMXImportResult importResult = PMXImporter.Import(ctx.assetPath, options);
             PMXImportPipelineResult pipelineResult = PMXImportPipeline.Import(importResult, ctx.assetPath, ctx, m_GenerateDebugData);
 
@@ -61,20 +86,26 @@ namespace UMT.Editor
                     timingCallback = timingCollector.RecordTiming,
                 };
 
-                foreach (VMDAnimation vmdAnimation in m_VMDAnimations)
+                for (int i = 0; i < m_VMDAnimations.Count; ++i)
                 {
+                    VMDAnimation vmdAnimation = m_VMDAnimations[i];
                     if (vmdAnimation == null)
                     {
                         continue;
                     }
 
-                    AnimationClip clip = VMDAnimationClipConverter.Convert(vmdAnimation, model, vmdOptions);
                     string clipName = string.IsNullOrEmpty(vmdAnimation.name)
                         ? "VMDClip"
                         : $"{vmdAnimation.name}_Clip";
+                    string progressTitle = $"Converting VMD {i + 1}/{m_VMDAnimations.Count}";
+                    AnimationClip clip = VMDAnimationClipConverter.Convert(
+                        vmdAnimation, model, vmdOptions,
+                        (stage, frame, totalFrames) => VMDClipProgress.Report(progressTitle, clipName, stage, frame, totalFrames));
                     clip.name = clipName;
                     ctx.AddObjectToAsset(clipName, clip);
                 }
+
+                EditorUtility.ClearProgressBar();
             }
 
             string timingReport = timingCollector.BuildReport("PMX Import Total");
@@ -87,6 +118,7 @@ namespace UMT.Editor
             Debug.Log(
                 $"[PMX Import] {ctx.assetPath}: model={pipelineResult.modelName}, " +
                 $"meshes={pipelineResult.meshCount}, materials={pipelineResult.materialCount}, " +
+                $"remapped={pipelineResult.remappedMaterialCount}, " +
                 $"avatar={pipelineResult.hasAvatar}, renamed={pipelineResult.renameCount}, " +
                 $"vmdClips={m_VMDAnimations.Count}\n" +
                 timingReport);

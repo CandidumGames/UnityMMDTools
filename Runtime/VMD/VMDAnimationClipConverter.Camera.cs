@@ -23,7 +23,7 @@ namespace UMT
         /// and carries the <see cref="Camera"/> field-of-view curve.
         /// </summary>
         /// <param name="animation">The parsed VMD animation whose camera frames are converted.</param>
-        /// <param name="frameRate">Frames per second of the generated clip.</param>
+        /// <param name="frameRate">Frames per second of the generated clip. The native 30 fps VMD timeline is sub-sampled when this is a higher integer multiple (60 or 120), preserving the clip's real-time duration.</param>
         /// <param name="cameraChildName">Name of the rig child transform (relative to the clip root) that carries the camera.</param>
         /// <param name="timingCallback">Optional callback invoked with a stage label and elapsed time for timing measurements.</param>
         /// <param name="progress">Optional progress callback.</param>
@@ -53,7 +53,8 @@ namespace UMT
             };
 
             uint lastFrame = GetLastCameraFrame(animation);
-            int frameCount = checked((int)lastFrame + 1);
+            int upsample = (int)(frameRate / MMDConstants.k_VMDNativeFrameRate);
+            int frameCount = checked((int)lastFrame * upsample + 1);
             ReportProgress(progress, Stage.CameraConversion, 0, frameCount);
 
             NativeArray<VMDCameraFrame> sortedFrames = BuildSortedCameraFrames(animation, Allocator.Persistent);

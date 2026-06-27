@@ -1427,29 +1427,35 @@ namespace UMT
             }
 
             /// <summary>
-            /// Bakes one dense keyframe per integer frame for the camera rig. The camera center position and
+            /// Bakes one keyframe per output sample for the camera rig. The VMD camera timeline is native 30 fps;
+            /// when <paramref name="outputFrameRate"/> is a higher integer multiple (60 or 120) the timeline is
+            /// sub-sampled, producing <c>outputFrameRate / 30</c> samples per VMD frame. The camera center position and
             /// orientation, the camera child's local Z distance, and the field of view are interpolated between the
             /// surrounding VMD keys using each destination key's per-channel Bezier curves, then converted into Unity
-            /// space.
+            /// space. Sub-frame samples that fall inside a segment whose bracketing keys are exactly one VMD frame apart
+            /// snap to the integer frame, preserving MMD hard cuts.
             /// </summary>
             /// <param name="frames">VMD camera keys sorted ascending by frame number.</param>
-            /// <param name="frameCount">Number of dense frames to produce (last frame + 1).</param>
+            /// <param name="frameCount">Number of output samples to produce (last VMD frame * upsample + 1).</param>
             /// <param name="scale">MMD-to-Unity unit scale applied to positions and distance.</param>
-            /// <param name="frameRate">Clip frame rate, used to compute keyframe times.</param>
+            /// <param name="outputFrameRate">Output clip frame rate; an integer multiple of the 30 fps VMD timeline.</param>
             /// <param name="buffers">Destination per-channel keyframe buffers.</param>
             [BurstCompile]
             internal static void BakeCameraFrames(
                 in NativeArray<VMDCameraFrame> frames,
                 int frameCount,
                 float scale,
-                float frameRate,
+                float outputFrameRate,
                 ref CameraCurveBuffers buffers)
             {
                 int keyCount = frames.Length;
+                int upsample = (int)(outputFrameRate / MMDConstants.k_VMDNativeFrameRate);
                 int previousKeyIndex = 0;
-                for (int frame = 0; frame < frameCount; ++frame)
+                for (int i = 0; i < frameCount; ++i)
                 {
-                    while (previousKeyIndex + 1 < keyCount && frames[previousKeyIndex + 1].frame <= (uint)frame)
+                    uint flooredFrame = (uint)(i / upsample);
+                    float framePos = (float)i / upsample;
+                    while (previousKeyIndex + 1 < keyCount && frames[previousKeyIndex + 1].frame <= flooredFrame)
                     {
                         ++previousKeyIndex;
                     }
@@ -1470,7 +1476,9 @@ namespace UMT
                     {
                         VMDCameraFrame next = frames[previousKeyIndex + 1];
                         float range = next.frame - previous.frame;
-                        float normalizedTime = range <= 0.0f ? 0.0f : (frame - previous.frame) / range;
+                        // Hard cut: keys one VMD frame apart suppress sub-frame interpolation (snap to the integer frame), matching MMD's behaviour.
+                        float samplePos = (next.frame - previous.frame == 1) ? flooredFrame : framePos;
+                        float normalizedTime = range <= 0.0f ? 0.0f : (samplePos - previous.frame) / range;
                         VMDCameraInterpolation interpolation = next.interpolation;
 
                         float movementT = EvaluateBezier(interpolation.movement, normalizedTime);
@@ -1491,16 +1499,16 @@ namespace UMT
                     quaternion centerRotation = EulerToUnityCameraRotation(rotationEuler);
                     float cameraDistanceZ = -math.abs(distance) * scale;
 
-                    float time = frame / frameRate;
-                    buffers.positionX[frame] = new Keyframe(time, centerPosition.x);
-                    buffers.positionY[frame] = new Keyframe(time, centerPosition.y);
-                    buffers.positionZ[frame] = new Keyframe(time, centerPosition.z);
-                    buffers.rotationX[frame] = new Keyframe(time, centerRotation.value.x);
-                    buffers.rotationY[frame] = new Keyframe(time, centerRotation.value.y);
-                    buffers.rotationZ[frame] = new Keyframe(time, centerRotation.value.z);
-                    buffers.rotationW[frame] = new Keyframe(time, centerRotation.value.w);
-                    buffers.cameraDistanceZ[frame] = new Keyframe(time, cameraDistanceZ);
-                    buffers.fieldOfView[frame] = new Keyframe(time, fieldOfView);
+                    float time = i / outputFrameRate;
+                    buffers.positionX[i] = new Keyframe(time, centerPosition.x);
+                    buffers.positionY[i] = new Keyframe(time, centerPosition.y);
+                    buffers.positionZ[i] = new Keyframe(time, centerPosition.z);
+                    buffers.rotationX[i] = new Keyframe(time, centerRotation.value.x);
+                    buffers.rotationY[i] = new Keyframe(time, centerRotation.value.y);
+                    buffers.rotationZ[i] = new Keyframe(time, centerRotation.value.z);
+                    buffers.rotationW[i] = new Keyframe(time, centerRotation.value.w);
+                    buffers.cameraDistanceZ[i] = new Keyframe(time, cameraDistanceZ);
+                    buffers.fieldOfView[i] = new Keyframe(time, fieldOfView);
                 }
             }
 

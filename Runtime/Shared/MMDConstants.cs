@@ -11,6 +11,11 @@ namespace UMT
         public const float k_MMDUnitToUnityUnit = 0.08f;
 
         /// <summary>
+        /// The native frame rate of the VMD timeline (integer frames are spaced at 1/30 second).
+        /// </summary>
+        public const float k_VMDNativeFrameRate = 30.0f;
+
+        /// <summary>
         /// The ASCII signature expected at the start of a PMX file header.
         /// </summary>
         public const string k_PMXHeaderSignature = "PMX ";

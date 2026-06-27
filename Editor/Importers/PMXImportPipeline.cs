@@ -22,6 +22,9 @@ namespace UMT.Editor
         /// <summary>Number of generated materials added to the imported asset.</summary>
         public int materialCount;
 
+        /// <summary>Number of material slots resolved to external (remapped) materials instead of generated ones.</summary>
+        public int remappedMaterialCount;
+
         /// <summary>Whether a humanoid avatar was created and added to the imported asset.</summary>
         public bool hasAvatar;
 
@@ -134,8 +137,15 @@ namespace UMT.Editor
                 ctx.AddObjectToAsset(importedMesh.mesh.name, importedMesh.mesh);
             }
 
+            int remappedMaterialCount = 0;
             foreach (Material material in importResult.materials)
             {
+                // External (remapped) materials are already standalone project assets; only embed generated ones.
+                if (AssetDatabase.Contains(material))
+                {
+                    ++remappedMaterialCount;
+                    continue;
+                }
                 ctx.AddObjectToAsset(material.name, material);
             }
 
@@ -159,6 +169,7 @@ namespace UMT.Editor
             result.modelName = modelName;
             result.meshCount = importResult.meshes.Count;
             result.materialCount = importResult.materials.Count;
+            result.remappedMaterialCount = remappedMaterialCount;
             result.hasAvatar = avatar != null;
             result.mmdBoneComponentCount = importResult.mmdTransformResult.boneComponentCount;
             result.mmdIKControllerCount = importResult.mmdTransformResult.ikControllerCount;

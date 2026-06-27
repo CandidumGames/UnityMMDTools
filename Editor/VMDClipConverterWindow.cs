@@ -25,11 +25,19 @@ namespace UMT.Editor
             Camera,
         }
 
+        private enum CameraFrameRate
+        {
+            [InspectorName("30 fps")] FPS30 = 30,
+            [InspectorName("60 fps")] FPS60 = 60,
+            [InspectorName("120 fps")] FPS120 = 120,
+        }
+
         private string m_VMDPath;
         private PMXModel m_PMXModel;
         private string m_OutputPath;
         private ConversionTarget m_ConversionTarget = ConversionTarget.Motion;
         private ConversionMode m_ConversionMode = ConversionMode.IKRuntimeSolved;
+        private CameraFrameRate m_CameraFrameRate = CameraFrameRate.FPS30;
         private bool m_BakePhysicsToFK = new VMDAnimationClipOptions().bakePhysicsToFK;
         private int m_PhysicsSeed = checked((int)new VMDAnimationClipOptions().physicsSeed);
         private float m_PhysicsSetupDuration = new VMDAnimationClipOptions().physicsWarmUpDuration;
@@ -104,6 +112,7 @@ namespace UMT.Editor
             }
             else
             {
+                m_CameraFrameRate = (CameraFrameRate)EditorGUILayout.EnumPopup("Frame Rate", m_CameraFrameRate);
                 EditorGUILayout.HelpBox(
                     "Camera VMD converts to a clip targeting a camera rig: the root carries center movement and rotation; a child \"Camera\" carries the distance offset and field of view.",
                     MessageType.Info);
@@ -182,6 +191,7 @@ namespace UMT.Editor
 
             AnimationClip generatedClip = VMDAnimationClipConverter.ConvertCamera(
                 animation,
+                frameRate: (float)(int)m_CameraFrameRate,
                 timingCallback: timingCollector.RecordTiming,
                 progress: ReportConvertProgress);
             EditorUtility.DisplayProgressBar("VMD Clip Converter", "Saving AnimationClip", 0.95f);
@@ -193,7 +203,7 @@ namespace UMT.Editor
             EditorUtility.ClearProgressBar();
             m_OutputPath = outputPath;
             string timingReport = timingCollector.BuildReport("VMD Camera Conversion Total");
-            m_Log = $"Created Camera AnimationClip: {outputPath}\nCamera frames: {animation.cameraFrames.Length}\nLight frames: {animation.lightFrames.Length}\n{timingReport}";
+            m_Log = $"Created Camera AnimationClip: {outputPath}\nFrame rate: {(int)m_CameraFrameRate} fps\nCamera frames: {animation.cameraFrames.Length}\nLight frames: {animation.lightFrames.Length}\n{timingReport}";
             Debug.Log($"[VMD Clip Converter] Created Camera AnimationClip: {outputPath}\n{timingReport}");
         }
 
@@ -328,41 +338,7 @@ namespace UMT.Editor
 
         private static void ReportConvertProgress(VMDAnimationClipConverter.Stage stage, int frame, int totalFrames)
         {
-            float progress = (float)frame / totalFrames;
-            string text = FormatProgressText(stage, frame, totalFrames);
-            EditorUtility.DisplayProgressBar("VMD Clip Converter", text, progress);
-        }
-
-        private static string FormatProgressText(VMDAnimationClipConverter.Stage stage, int frame, int totalFrames)
-        {
-            string stageText = FormatStage(stage);
-            if (totalFrames <= 0)
-            {
-                return stageText;
-            }
-
-            return $"{stageText}: frame {frame} / {totalFrames}";
-        }
-
-        private static string FormatStage(VMDAnimationClipConverter.Stage stage)
-        {
-            switch (stage)
-            {
-                case VMDAnimationClipConverter.Stage.Setup:
-                    return "Setting up conversion";
-                case VMDAnimationClipConverter.Stage.BoneConversion:
-                    return "Converting bone animation";
-                case VMDAnimationClipConverter.Stage.MorphConversion:
-                    return "Converting morph animation";
-                case VMDAnimationClipConverter.Stage.CameraConversion:
-                    return "Converting camera animation";
-                case VMDAnimationClipConverter.Stage.Finalization:
-                    return "Finalizing animation";
-                case VMDAnimationClipConverter.Stage.Complete:
-                    return "Conversion complete";
-                default:
-                    return stage.ToString();
-            }
+            VMDClipProgress.Report("VMD Clip Converter", null, stage, frame, totalFrames);
         }
     }
 }
