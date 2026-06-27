@@ -108,4 +108,4 @@ To convert against a model you didn't just import, use the standalone window at 
 
 ## License
 
-MIT (see [LICENSE](LICENSE)). Bundled third-party components ship under MIT / zlib / NAIST licenses; see [Third Party Notices](<Third Party Notices.md>) for the full attributions.
+MIT (see [LICENSE](LICENSE.md)). Bundled third-party components ship under MIT / zlib / NAIST licenses; see [Third Party Notices](<Third Party Notices.md>) for the full attributions.
