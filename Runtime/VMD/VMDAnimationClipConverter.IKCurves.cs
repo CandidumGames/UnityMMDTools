@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Unity.Collections;
 using UnityEngine;
@@ -8,7 +9,7 @@ namespace UMT
     {
 
         private static void AddIKCurves(
-            AnimationClip clip,
+            VMDClipData ikToggles,
             VMDAnimation animation,
             ref MMDTransformManager.SolverContext transformContext,
             string[] bonePaths,
@@ -36,6 +37,8 @@ namespace UMT
                 ref ikSamplesByTrack,
                 frameCount);
 
+            List<string> togglePaths = new List<string>();
+            List<AnimationCurve> toggleCurves = new List<AnimationCurve>();
             for (int trackIndex = 0; trackIndex < ikBoneIndices.Length; ++trackIndex)
             {
                 int boneIndex = ikBoneIndices[trackIndex];
@@ -49,8 +52,12 @@ namespace UMT
                     keyframes[frameIndex] = SteppedKeyframe(frameIndex / frameRate, enabled ? 1.0f : 0.0f);
                 }
 
-                clip.SetCurve(path, typeof(MMDBoneTransform), k_IKEnabledProperty, new AnimationCurve(keyframes));
+                togglePaths.Add(path);
+                toggleCurves.Add(new AnimationCurve(keyframes));
             }
+
+            ikToggles.paths = togglePaths.ToArray();
+            ikToggles.curves = toggleCurves.ToArray();
 
             ikSamplesByTrack.Dispose();
             ikBoneIndices.Dispose();

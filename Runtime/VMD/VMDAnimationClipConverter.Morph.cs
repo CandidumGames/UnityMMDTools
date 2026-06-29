@@ -13,7 +13,7 @@ namespace UMT
     {
 
         private static void AddMorphCurves(
-            AnimationClip clip,
+            VMDMorphClipData morphs,
             VMDAnimation animation,
             PMXModel model,
             string[][] morphRendererPaths,
@@ -54,6 +54,9 @@ namespace UMT
                 frameCount,
                 frameRate);
 
+            List<string> morphPaths = new List<string>();
+            List<string> morphNames = new List<string>();
+            List<AnimationCurve> morphCurves = new List<AnimationCurve>();
             for (int trackIndex = 0; trackIndex < curveMorphIndices.Length; ++trackIndex)
             {
                 int morphIndex = curveMorphIndices[trackIndex];
@@ -73,13 +76,15 @@ namespace UMT
                 string[] rendererPaths = morphRendererPaths[morphIndex];
                 for (int rendererIndex = 0; rendererIndex < rendererPaths.Length; ++rendererIndex)
                 {
-                    clip.SetCurve(
-                        rendererPaths[rendererIndex],
-                        typeof(SkinnedMeshRenderer),
-                        $"blendShape.{morphName}",
-                        curve);
+                    morphPaths.Add(rendererPaths[rendererIndex]);
+                    morphNames.Add(morphName);
+                    morphCurves.Add(curve);
                 }
             }
+
+            morphs.paths = morphPaths.ToArray();
+            morphs.names = morphNames.ToArray();
+            morphs.curves = morphCurves.ToArray();
 
             ReportProgress(progress, Stage.MorphConversion, frameCount, frameCount);
             groupMorphOffsets.Dispose();

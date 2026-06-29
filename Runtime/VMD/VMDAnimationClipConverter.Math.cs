@@ -1,8 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -19,46 +20,95 @@ namespace UMT
             int frameCount,
             Allocator allocator)
         {
-            ResolvedBoneFrame[] sortedFrames = new ResolvedBoneFrame[animation.boneFrames.Length];
-            int resultCount = 0;
+            NativeList<ResolvedBoneFrame> result = new NativeList<ResolvedBoneFrame>(animation.boneFrames.Length, allocator);
+
             for (int sourceOrder = 0; sourceOrder < animation.boneFrames.Length; ++sourceOrder)
             {
-                VMDBoneFrame frame = animation.boneFrames[sourceOrder];
-                int boneIndex = resolver.ResolveBoneIndex(frame.boneName);
-                if (boneIndex < 0 || boneIndex >= boneCount)
-                {
-                    continue;
-                }
-
-                int frameIndex = checked((int)frame.frame);
-                if (frameIndex >= frameCount)
-                {
-                    continue;
-                }
-
-                sortedFrames[resultCount] = new ResolvedBoneFrame(
-                    boneIndex,
-                    frame.frame,
+                BuildResolvedBoneFrame(
                     sourceOrder,
-                    ToBoneSample(
-                        frame,
-                        boneSolverData[boneIndex].initialLocalPosition,
-                        boneSolverData[boneIndex].initialLocalRotation));
-                ++resultCount;
+                    ref result,
+                    animation,
+                    ref resolver,
+                    boneSolverData,
+                    boneCount,
+                    frameCount,
+                    allocator);
             }
-
-            if (resultCount != sortedFrames.Length)
-            {
-                Array.Resize(ref sortedFrames, resultCount);
-            }
-            Array.Sort(sortedFrames);
-
-            NativeList<ResolvedBoneFrame> result = new NativeList<ResolvedBoneFrame>(resultCount, allocator);
-            for (int i = 0; i < sortedFrames.Length; ++i)
-            {
-                result.Add(sortedFrames[i]);
-            }
+            result.Sort();
             return result;
+        }
+
+        private static async Awaitable<NativeList<ResolvedBoneFrame>> BuildSortedResolvedBoneFramesAsync(
+            UMTFrameBudget frameBudget,
+            VMDAnimation animation,
+            IndexResolver resolver,
+            NativeArray<MMDBoneTransform.BoneSolverData> boneSolverData,
+            int boneCount,
+            int frameCount,
+            Allocator allocator)
+        {
+            NativeList<ResolvedBoneFrame> result = new NativeList<ResolvedBoneFrame>(animation.boneFrames.Length, allocator);
+
+            for (int sourceOrder = 0; sourceOrder < animation.boneFrames.Length; ++sourceOrder)
+            {
+                BuildResolvedBoneFrame(
+                    sourceOrder,
+                    ref result,
+                    animation,
+                    ref resolver,
+                    boneSolverData,
+                    boneCount,
+                    frameCount,
+                    allocator);
+                if (sourceOrder % 100 == 0)
+                {
+                    await frameBudget.YieldIfNeeded();
+                }
+            }
+            SortJob<ResolvedBoneFrame, NativeSortExtension.DefaultComparer<ResolvedBoneFrame>> sortJob = result.SortJob();
+            JobHandle handle = sortJob.Schedule();
+            for (long i = 0; !handle.IsCompleted; ++i)
+            {
+                if (i % 100 == 0)
+                {
+                    await frameBudget.YieldIfNeeded();
+                }
+            }
+            handle.Complete();
+            return result;
+        }
+
+        private static void BuildResolvedBoneFrame(
+            int sourceOrder,
+            ref NativeList<ResolvedBoneFrame> result,
+            VMDAnimation animation,
+            ref IndexResolver resolver,
+            in NativeArray<MMDBoneTransform.BoneSolverData> boneSolverData,
+            int boneCount,
+            int frameCount,
+            Allocator allocator)
+        {
+            VMDBoneFrame frame = animation.boneFrames[sourceOrder];
+            int boneIndex = resolver.ResolveBoneIndex(frame.boneName);
+            if (boneIndex < 0 || boneIndex >= boneCount)
+            {
+                return;
+            }
+
+            int frameIndex = checked((int)frame.frame);
+            if (frameIndex >= frameCount)
+            {
+                return;
+            }
+
+            result.Add(new ResolvedBoneFrame(
+                boneIndex,
+                frame.frame,
+                sourceOrder,
+                ToBoneSample(
+                    frame,
+                    boneSolverData[boneIndex].initialLocalPosition,
+                    boneSolverData[boneIndex].initialLocalRotation)));
         }
 
         private static NativeList<ResolvedIKToggleFrame> BuildSortedResolvedIKToggleFrames(
@@ -172,15 +222,51 @@ namespace UMT
             {
                 for (int frameIndex = 0; frameIndex < frames.Length; ++frameIndex)
                 {
-                    ResolvedBoneFrame frame = frames[frameIndex];
-                    int trackIndex = sourceTrackIndexByBone[frame.boneIndex];
-                    if (trackIndex < 0)
-                    {
-                        continue;
-                    }
-
-                    boneSamples[trackIndex * frameCount + checked((int)frame.frame)] = frame.sample;
+                    FillCompactBoneSample(frameIndex, frames, sourceTrackIndexByBone, ref boneSamples, frameCount);
                 }
+            }
+
+            /// <summary>
+            /// Asynchronously scatters each resolved bone frame into the compact per-track sample buffer at its frame index.
+            /// </summary>
+            /// <param name="frameBudget">Frame budget for yielding.</param>
+            /// <param name="frames">Sorted resolved bone frames to place.</param>
+            /// <param name="sourceTrackIndexByBone">Map from bone index to compact track index.</param>
+            /// <param name="boneSamples">Output flattened (track, frame) sample buffer.</param>
+            /// <param name="frameCount">Number of frames per track.</param>
+            internal static async Awaitable FillCompactBoneSamplesAsync(
+                UMTFrameBudget frameBudget,
+                NativeList<ResolvedBoneFrame> frames,
+                NativeArray<int> sourceTrackIndexByBone,
+                NativeArray<BoneSample> boneSamples,
+                int frameCount)
+            {
+                for (int frameIndex = 0; frameIndex < frames.Length; ++frameIndex)
+                {
+                    FillCompactBoneSample(frameIndex, frames, sourceTrackIndexByBone, ref boneSamples, frameCount);
+                    if (frameIndex % 100 == 0)
+                    {
+                        await frameBudget.YieldIfNeeded();
+                    }
+                }
+            }
+
+            [BurstCompile]
+            private static void FillCompactBoneSample(
+                int frameIndex,
+                in NativeList<ResolvedBoneFrame> frames,
+                in NativeArray<int> sourceTrackIndexByBone,
+                ref NativeArray<BoneSample> boneSamples,
+                int frameCount)
+            {
+                ResolvedBoneFrame frame = frames[frameIndex];
+                int trackIndex = sourceTrackIndexByBone[frame.boneIndex];
+                if (trackIndex < 0)
+                {
+                    return;
+                }
+
+                boneSamples[trackIndex * frameCount + checked((int)frame.frame)] = frame.sample;
             }
 
             /// <summary>
@@ -244,6 +330,89 @@ namespace UMT
 
                     lastFrameWithSampleByBone[boneIndex] = previousKeyIndex;
                 }
+            }
+
+            /// <summary>
+            /// Asynchronously fills every gap in each compact bone track by Bezier/slerp interpolation between surrounding keys,
+            /// seeding frame 0 from the initial pose and recording the last keyed frame per bone.
+            /// </summary>
+            /// <param name="frameBudget">Frame budget for yielding.</param>
+            /// <param name="boneSolverData">Per-bone solver data providing initial local transforms.</param>
+            /// <param name="sourceBoneIndices">Bone indices that have source tracks.</param>
+            /// <param name="boneSamples">Flattened (track, frame) sample buffer to fill in place.</param>
+            /// <param name="frameCount">Number of frames per track.</param>
+            /// <param name="lastFrameWithSampleByBone">Output last keyed frame index per bone.</param>
+            internal static async Awaitable InterpolateCompactBoneSamplesAsync(
+                UMTFrameBudget frameBudget,
+                NativeArray<MMDBoneTransform.BoneSolverData> boneSolverData,
+                NativeList<int> sourceBoneIndices,
+                NativeArray<BoneSample> boneSamples,
+                int frameCount,
+                NativeArray<int> lastFrameWithSampleByBone)
+            {
+                for (int trackIndex = 0; trackIndex < sourceBoneIndices.Length; ++trackIndex)
+                {
+                    InterpolateCompactBoneSample(
+                        trackIndex,
+                        in boneSolverData,
+                        in sourceBoneIndices,
+                        ref boneSamples,
+                        frameCount,
+                        ref lastFrameWithSampleByBone);
+                    await frameBudget.YieldIfNeeded();
+                }
+            }
+
+            [BurstCompile]
+            private static void InterpolateCompactBoneSample(
+                int trackIndex,
+                in NativeArray<MMDBoneTransform.BoneSolverData> boneSolverData,
+                in NativeList<int> sourceBoneIndices,
+                ref NativeArray<BoneSample> boneSamples,
+                int frameCount,
+                ref NativeArray<int> lastFrameWithSampleByBone)
+            {
+                int boneIndex = sourceBoneIndices[trackIndex];
+                int sampleStartIndex = trackIndex * frameCount;
+                if (!boneSamples[sampleStartIndex].hasKey)
+                {
+                    boneSamples[sampleStartIndex] = new BoneSample(
+                        boneSolverData[boneIndex].initialLocalPosition,
+                        boneSolverData[boneIndex].initialLocalRotation,
+                        true);
+                }
+
+                ApplyShortestRotationPath(ref boneSamples, sampleStartIndex, frameCount);
+                int previousKeyIndex = 0;
+                int nextKeyIndex = FindNextBoneKey(in boneSamples, sampleStartIndex, frameCount, 1);
+                for (int frameIndex = 0; frameIndex < frameCount; ++frameIndex)
+                {
+                    int sampleIndex = sampleStartIndex + frameIndex;
+                    if (boneSamples[sampleIndex].hasKey)
+                    {
+                        previousKeyIndex = frameIndex;
+                        nextKeyIndex = FindNextBoneKey(in boneSamples, sampleStartIndex, frameCount, frameIndex + 1);
+                    }
+                    else if (nextKeyIndex >= 0)
+                    {
+                        BoneSample previousSample = boneSamples[sampleStartIndex + previousKeyIndex];
+                        BoneSample nextSample = boneSamples[sampleStartIndex + nextKeyIndex];
+                        InterpolateBoneSample(
+                            in previousSample,
+                            in nextSample,
+                            previousKeyIndex,
+                            nextKeyIndex,
+                            frameIndex,
+                            out BoneSample interpolatedSample);
+                        boneSamples[sampleIndex] = interpolatedSample;
+                    }
+                    else
+                    {
+                        boneSamples[sampleIndex] = boneSamples[sampleStartIndex + previousKeyIndex];
+                    }
+                }
+
+                lastFrameWithSampleByBone[boneIndex] = previousKeyIndex;
             }
 
             /// <summary>

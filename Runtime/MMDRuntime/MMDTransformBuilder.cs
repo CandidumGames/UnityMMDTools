@@ -129,6 +129,7 @@ namespace UMT
             result.joints = BuildJoints(model, result.rigidBodies);
             result.physicsManager.rigidBodies = result.rigidBodies;
             result.physicsManager.joints = result.joints;
+            result.transformManager.InitializePhysics();
 
             root.TryGetComponent<Animator>(out Animator animator);
             if (animator == null)

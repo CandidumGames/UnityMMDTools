@@ -13,7 +13,12 @@ namespace UMT
     /// </summary>
     public struct MMDBulletPhysics : IDisposable
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // The Web platform (UNITY_WEBGL is Unity's scripting define for it, regardless of the WebGL/WebGPU graphics backend) statically links the native plugin into the player, so P/Invoke must resolve against the special "__Internal" pseudo-library rather than a DLL name.
+        private const string k_DllName = "__Internal";
+#else
         private const string k_DllName = "UMTNativePlugin";
+#endif
         /// <summary>Whether the underlying native physics context has been created and not yet disposed.</summary>
         public bool isValid => m_NativeContext != IntPtr.Zero;
         private IntPtr m_NativeContext;
@@ -212,19 +217,6 @@ namespace UMT
                 [In] float* transforms,
                 [In] int* rigidBodyIndices,
                 bool clearVelocity);
-
-            [DllImport(k_DllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern void MMDBulletPhysicsSetRigidBodyTransform(
-                IntPtr context,
-                nuint rigidBodyIndex,
-                [In] float[] transform,
-                bool clearVelocity);
-
-            [DllImport(k_DllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern void MMDBulletPhysicsGetRigidBodyMotionTransform(
-                IntPtr context,
-                int rigidBodyIndex,
-                [Out] float[] transform);
 
             [DllImport(k_DllName, CallingConvention = CallingConvention.Cdecl)]
             public unsafe static extern void MMDBulletPhysicsGetRigidBodyMotionTransforms(

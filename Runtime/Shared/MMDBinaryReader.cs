@@ -139,8 +139,9 @@ namespace UMT
         /// <returns>The decoded fixed string.</returns>
         public FixedString32Bytes ReadCP932(int byteCount)
         {
+            // Uses the self-contained ShiftJisDecoder rather than Encoding.GetEncoding(932), which is unavailable on IL2CPP/WebGL (throws NotSupportedException).
             FixedString32Bytes result = default;
-            result.CopyFromTruncated(Encoding.GetEncoding(932).GetString(m_Reader.ReadBytes(byteCount), 0, byteCount).TrimEnd('\0'));
+            result.CopyFromTruncated(ShiftJisDecoder.GetString(m_Reader.ReadBytes(byteCount), 0, byteCount).TrimEnd('\0'));
             return result;
         }
 

@@ -147,7 +147,7 @@ namespace UMT
             RebuildNativeCaches();
             if (Application.isPlaying && physicsManager != null)
             {
-                InitializePhysics(physicsManager.physicsSeed);
+                InitializePhysics();
             }
         }
 
@@ -224,10 +224,9 @@ namespace UMT
         }
 
         /// <summary>
-        /// Initializes and resets the companion physics manager with the given seed.
+        /// Initializes and resets the companion physics manager.
         /// </summary>
-        /// <param name="seed">Random seed used to reset the physics simulation.</param>
-        internal void InitializePhysics(uint seed)
+        internal void InitializePhysics()
         {
             if (physicsManager == null)
             {
@@ -235,7 +234,6 @@ namespace UMT
             }
 
             physicsManager.Initialize();
-            physicsManager.physicsSeed = seed;
             physicsManager.ResetPhysics();
         }
 
@@ -387,6 +385,29 @@ namespace UMT
                 bones[i].transform.SetLocalPositionAndRotation(localPosition, localRotation);
                 bones[i].runtimeData = runtimeData;
             }
+        }
+
+        /// <summary>
+        /// Restores every bone's Unity local transform to its captured initial (bind) pose and re-seeds the native
+        /// solver caches so the next solve pass starts from that pose. Use this to return a posed model to its default
+        /// stance after clearing an animation.
+        /// </summary>
+        public void ResetToBindPose()
+        {
+            for (int i = 0; i < bones.Length; ++i)
+            {
+                MMDBoneTransform bone = bones[i];
+                if (bone == null)
+                {
+                    continue;
+                }
+
+                bone.transform.localPosition = bone.initialLocalPosition;
+                bone.transform.localRotation = bone.initialLocalRotation;
+            }
+
+            RebuildNativeCaches();
+            InitializePhysics();
         }
 
         /// <summary>

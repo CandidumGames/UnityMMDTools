@@ -64,7 +64,7 @@ UMT is a toolkit for maximally reproducing MikuMikuDance (MMD) behaviour in Unit
 
 Unity 2022.3 or newer, built-in render pipeline or URP. Materials build against lilToon when it's installed, otherwise URP Unlit or built-in Unlit.
 
-Native physics builds for **Windows x64** and **Android arm64-v8a**. On other platforms you can still import models and convert non-physics motion, but live and baked physics need the native plugin.
+Native physics builds for **Windows x64**, **Android arm64-v8a**, and **Web/WebAssembly**. On other platforms you can still import models and convert non-physics motion, but live and baked physics need the native plugin.
 
 ## Dependencies
 
@@ -91,7 +91,7 @@ Add the package through the Unity Package Manager (**Add package from git URL**,
 
 ### Import a PMX model
 
-Drop the `.pmx` and its textures into the project and the scripted importer handles it. The generated meshes, materials, bones, avatar, and any converted VMD clips become sub-assets of the `.pmx` — there's no separate output folder or prefab, and re-importing the `.pmx` re-runs the whole pipeline.
+Drop the `.pmx` and its textures into the project and the scripted importer handles it. The generated meshes, materials, bones, avatar, and any converted VMD clips become sub-assets of the `.pmx`.
 
 Select the `.pmx` for importer options: **Create Avatar**, **Generate Debug Data**, and the **VMD Animations** list. With debug data on, the importer also writes `.metadata.json`, `.string-map.json`, and `.import.log` sidecar files.
 

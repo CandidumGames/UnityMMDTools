@@ -40,6 +40,45 @@ namespace UMT
             return model;
         }
 
+        /// <summary>Reads and validates a complete PMX model from the given stream asynchronously, yielding control
+        /// back to the Unity main thread according to <paramref name="frameBudget"/>.</summary>
+        /// <param name="frameBudget">The frame budget used to yield control during long-running parsing.</param>
+        /// <param name="stream">Stream positioned at the start of the PMX data.</param>
+        /// <param name="strictVersion">When true, requires the file version to match the supported PMX version.</param>
+        /// <returns>The parsed PMX model as a new <see cref="ScriptableObject"/>.</returns>
+        /// <exception cref="InvalidDataException">Thrown when the stream contains invalid or unsupported PMX data.</exception>
+        public static async Awaitable<PMXModel> ReadAsync(UMTFrameBudget frameBudget, Stream stream, bool strictVersion = true)
+        {
+            using MMDBinaryReader reader = new MMDBinaryReader(stream, true);
+            PMXModel model = ScriptableObject.CreateInstance<PMXModel>();
+
+            ReadHeader(reader, ref model.header, strictVersion);
+            ReadModelInfo(reader, model);
+            await frameBudget.YieldIfNeeded();
+            ReadVertices(reader, model);
+            await frameBudget.YieldIfNeeded();
+            ReadFaces(reader, model);
+            await frameBudget.YieldIfNeeded();
+            ReadTextures(reader, model);
+            await frameBudget.YieldIfNeeded();
+            ReadMaterials(reader, model);
+            await frameBudget.YieldIfNeeded();
+            ReadBones(reader, model);
+            await frameBudget.YieldIfNeeded();
+            ReadMorphs(reader, model);
+            await frameBudget.YieldIfNeeded();
+            ReadDisplayFrames(reader, model);
+            await frameBudget.YieldIfNeeded();
+            ReadRigidBodies(reader, model);
+            await frameBudget.YieldIfNeeded();
+            ReadJoints(reader, model);
+            await frameBudget.YieldIfNeeded();
+            Validate(model);
+            await frameBudget.YieldIfNeeded();
+
+            return model;
+        }
+
         private static void ReadHeader(MMDBinaryReader reader, ref PMXHeader header, bool strictVersion)
         {
             header.signature = reader.ReadAscii32Bytes(MMDConstants.k_PMXHeaderSignatureByteCount);

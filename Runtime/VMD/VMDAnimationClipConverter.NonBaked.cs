@@ -1,16 +1,17 @@
 using Unity.Collections;
 using Unity.Mathematics;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 using UnityEngine;
 
 namespace UMT
 {
     public static partial class VMDAnimationClipConverter
     {
+        // The 6 non-baked bone channels, in the order stored in VMDClipData.curves[6 * boneIndex + channel]:
+        // localPosition x/y/z, localEulerAnglesRaw x/y/z.
+        private const int k_NonBakedBoneChannelCount = 6;
+
         private static void AddBoneCurves(
-            AnimationClip clip,
+            VMDClipData bones,
             VMDAnimation animation,
             PMXModel model,
             ref MMDTransformManager.SolverContext transformContext,
@@ -104,18 +105,20 @@ namespace UMT
                         ref eulerZ);
                 }
 
+                int channelStart = checked(boneIndex * k_NonBakedBoneChannelCount);
+                bones.paths[boneIndex] = path;
                 if (writePosition)
                 {
-                    SetSparseNativeCurve(clip, path, "localPosition.x", positionX, sampleCount, true);
-                    SetSparseNativeCurve(clip, path, "localPosition.y", positionY, sampleCount, true);
-                    SetSparseNativeCurve(clip, path, "localPosition.z", positionZ, sampleCount, true);
+                    bones.curves[channelStart + 0] = BuildSparseCurve(positionX, sampleCount, true);
+                    bones.curves[channelStart + 1] = BuildSparseCurve(positionY, sampleCount, true);
+                    bones.curves[channelStart + 2] = BuildSparseCurve(positionZ, sampleCount, true);
                 }
 
                 if (writeRotation)
                 {
-                    SetSparseNativeEditorCurve(clip, path, "localEulerAnglesRaw.x", eulerX, sampleCount, true);
-                    SetSparseNativeEditorCurve(clip, path, "localEulerAnglesRaw.y", eulerY, sampleCount, true);
-                    SetSparseNativeEditorCurve(clip, path, "localEulerAnglesRaw.z", eulerZ, sampleCount, true);
+                    bones.curves[channelStart + 3] = BuildSparseCurve(eulerX, sampleCount, true);
+                    bones.curves[channelStart + 4] = BuildSparseCurve(eulerY, sampleCount, true);
+                    bones.curves[channelStart + 5] = BuildSparseCurve(eulerZ, sampleCount, true);
                 }
 
                 sparseSamples.Dispose();
@@ -136,7 +139,7 @@ namespace UMT
             ReportProgress(progress, Stage.BoneConversion, frameCount, frameCount);
         }
 
-        private static void SetSparseNativeCurve(AnimationClip clip, string path, string propertyName, NativeArray<Keyframe> keyframes, int count, bool preserveTangents)
+        private static AnimationCurve BuildSparseCurve(NativeArray<Keyframe> keyframes, int count, bool preserveTangents)
         {
             Keyframe[] managedKeyframes = keyframes.GetSubArray(0, count).ToArray();
             if (!preserveTangents)
@@ -144,24 +147,7 @@ namespace UMT
                 ApplyLinearTangents(managedKeyframes);
             }
 
-            clip.SetCurve(path, typeof(Transform), propertyName, new AnimationCurve(managedKeyframes));
-        }
-
-        private static void SetSparseNativeEditorCurve(AnimationClip clip, string path, string propertyName, NativeArray<Keyframe> keyframes, int count, bool preserveTangents)
-        {
-            Keyframe[] managedKeyframes = keyframes.GetSubArray(0, count).ToArray();
-            if (!preserveTangents)
-            {
-                ApplyLinearTangents(managedKeyframes);
-            }
-
-            AnimationCurve curve = new AnimationCurve(managedKeyframes);
-#if UNITY_EDITOR
-            EditorCurveBinding binding = EditorCurveBinding.FloatCurve(path, typeof(Transform), propertyName);
-            AnimationUtility.SetEditorCurve(clip, binding, curve);
-#else
-            clip.SetCurve(path, typeof(Transform), propertyName, curve);
-#endif
+            return new AnimationCurve(managedKeyframes);
         }
     }
 }

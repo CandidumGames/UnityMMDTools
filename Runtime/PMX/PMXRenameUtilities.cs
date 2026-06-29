@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Unity.Collections;
 using UnityEngine;
 
@@ -145,6 +146,21 @@ namespace UMT
             return JsonConvert.DeserializeObject<PMXRenameLists>(json) ?? new PMXRenameLists();
         }
 
+        /// <summary>Asynchronously deserializes rename lists from a JSON string.</summary>
+        /// <remarks>
+        /// The parse itself is a single indivisible call; this yields once through <paramref name="frameBudget"/> before
+        /// it so the UI can repaint, and runs on the main thread (no worker offload) to stay safe on WebGL.
+        /// </remarks>
+        /// <param name="frameBudget">Frame budget used to yield back to the main thread before parsing; may be null to run without yielding.</param>
+        /// <param name="json">Rename-list JSON.</param>
+        /// <returns>The deserialized rename lists, or an empty instance when the JSON deserializes to null.</returns>
+        /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is null or empty.</exception>
+        public static async Task<PMXRenameLists> LoadRenameListsJsonAsync(UMTFrameBudget frameBudget, string json)
+        {
+            await YieldIfNeeded(frameBudget);
+            return LoadRenameListsJson(json);
+        }
+
         /// <summary>
         /// Renames the material, bone, morph, rigid body, and joint names of a model in place, applying
         /// ordered token replacements, romanization, ASCII normalization, and bone-name uniqueness.
@@ -214,6 +230,101 @@ namespace UMT
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Asynchronously renames the material, bone, morph, rigid body, and joint names of a model in place, applying
+        /// ordered token replacements, romanization, ASCII normalization, and bone-name uniqueness.
+        /// </summary>
+        /// <remarks>
+        /// Runs entirely on the calling (main) thread and yields cooperatively through <paramref name="frameBudget"/>
+        /// rather than offloading to a worker thread, so it stays responsive — and functional — on single-threaded
+        /// platforms such as WebGL.
+        /// </remarks>
+        /// <param name="frameBudget">Frame budget used to yield back to the main thread between stages; may be null to run without yielding.</param>
+        /// <param name="model">Model whose names are renamed in place.</param>
+        /// <param name="renameLists">Ordered token replacement lists to apply.</param>
+        /// <param name="umtResources">Resources providing romanization dictionaries.</param>
+        /// <returns>The rename result with change counts and a string map.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="model"/> or <paramref name="renameLists"/> is null.</exception>
+        public static async Task<PMXRenameResult> RenameAsync(UMTFrameBudget frameBudget, PMXModel model, PMXRenameLists renameLists, UMTResources umtResources)
+        {
+            if (model == null)
+            {
+                throw new ArgumentNullException(nameof(model));
+            }
+            if (renameLists == null)
+            {
+                throw new ArgumentNullException(nameof(renameLists));
+            }
+
+            string[] materialNames = BuildRenamedNames(GetOriginalNames(model.materials), renameLists.renameList, umtResources, true);
+            await YieldIfNeeded(frameBudget);
+            string[] boneNames = BuildRenamedNames(GetOriginalNames(model.bones), renameLists.renameList, umtResources, false);
+            await YieldIfNeeded(frameBudget);
+            string[] morphNames = BuildRenamedNames(GetOriginalNames(model.morphs), renameLists.morphRenameList, umtResources, true);
+            await YieldIfNeeded(frameBudget);
+            string[] rigidBodyNames = BuildRenamedNames(GetOriginalNames(model.rigidBodies), renameLists.renameList, umtResources, false);
+            await YieldIfNeeded(frameBudget);
+            string[] jointNames = BuildRenamedNames(GetOriginalNames(model.joints), renameLists.renameList, umtResources, false);
+            await YieldIfNeeded(frameBudget);
+            boneNames = BuildUniqueBoneNames(model, boneNames);
+            await YieldIfNeeded(frameBudget);
+
+            PMXRenameResult result = new PMXRenameResult();
+            for (int i = 0; i < model.materials.Length; ++i)
+            {
+                PMXMaterial material = model.materials[i];
+                string originalName = material.originalName.ToString();
+                ApplyRenamedName("material", i, originalName, materialNames[i], ref material.renamedName, result);
+                model.materials[i] = material;
+            }
+            await YieldIfNeeded(frameBudget);
+
+            for (int i = 0; i < model.bones.Length; ++i)
+            {
+                PMXBone bone = model.bones[i];
+                string originalName = bone.originalName.ToString();
+                ApplyRenamedName("bone", i, originalName, boneNames[i], ref bone.renamedName, result);
+                model.bones[i] = bone;
+            }
+            await YieldIfNeeded(frameBudget);
+
+            for (int i = 0; i < model.morphs.Length; ++i)
+            {
+                PMXMorph morph = model.morphs[i];
+                string originalName = morph.originalName.ToString();
+                ApplyRenamedName("morph", i, originalName, morphNames[i], ref morph.renamedName, result);
+                model.morphs[i] = morph;
+            }
+            await YieldIfNeeded(frameBudget);
+
+            for (int i = 0; i < model.rigidBodies.Length; ++i)
+            {
+                PMXRigidBody rigidBody = model.rigidBodies[i];
+                string originalName = rigidBody.originalName.ToString();
+                ApplyRenamedName("rigidBody", i, originalName, rigidBodyNames[i], ref rigidBody.renamedName, result);
+                model.rigidBodies[i] = rigidBody;
+            }
+            await YieldIfNeeded(frameBudget);
+
+            for (int i = 0; i < model.joints.Length; ++i)
+            {
+                PMXJoint joint = model.joints[i];
+                string originalName = joint.originalName.ToString();
+                ApplyRenamedName("joint", i, originalName, jointNames[i], ref joint.renamedName, result);
+                model.joints[i] = joint;
+            }
+
+            return result;
+        }
+
+        private static async Task YieldIfNeeded(UMTFrameBudget frameBudget)
+        {
+            if (frameBudget != null)
+            {
+                await frameBudget.YieldIfNeeded();
+            }
         }
 
         private static string[] BuildRenamedNames(

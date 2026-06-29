@@ -18,7 +18,18 @@ public static class TGALoader
 
     public static Texture2D LoadTGA(Stream TGAStream)
     {
+        int width, height, bitDepth;
+        Color32[] pulledColors = LoadTGA(TGAStream, out width, out height, out bitDepth);
 
+        Texture2D tex = new Texture2D(width, height);
+
+        tex.SetPixels32(pulledColors);
+        tex.Apply();
+        return tex;
+    }
+
+    public static Color32[] LoadTGA(Stream TGAStream, out int width, out int height, out int bitDepth)
+    {
         using (BinaryReader r = new BinaryReader(TGAStream))
         {
             // Skip some header info we don't care about.
@@ -26,14 +37,13 @@ public static class TGALoader
             // as the previous method in the workflow left it at the end.
             r.BaseStream.Seek(12, SeekOrigin.Begin);
 
-            short width = r.ReadInt16();
-            short height = r.ReadInt16();
-            int bitDepth = r.ReadByte();
+            width = r.ReadInt16();
+            height = r.ReadInt16();
+            bitDepth = r.ReadByte();
 
             // Skip a byte of header information we don't care about.
             r.BaseStream.Seek(1, SeekOrigin.Current);
 
-            Texture2D tex = new Texture2D(width, height);
             Color32[] pulledColors = new Color32[width * height];
 
             if (bitDepth == 32)
@@ -72,10 +82,7 @@ public static class TGALoader
                 throw new Exception("TGA texture had non 32/24/8 bit depth.");
             }
 
-            tex.SetPixels32(pulledColors);
-            tex.Apply();
-            return tex;
-
+            return pulledColors;
         }
     }
 }

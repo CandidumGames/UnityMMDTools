@@ -1,12 +1,35 @@
 # Changelog
+
 All notable changes to this package will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-06-29
+
+### Added
+
+- WebAssembly support.
+- Face and eye material heuristics for lilToon shadow tuning.
+
+### Changed
+
+- Material transparency detection now runs on the CPU with a Burst job sampling decoded source-file pixels, replacing the GPU compute-shader path.
+- Create asynchronous version of most hot path functions for loading models and baking animtions runtime.
+- lilToon materials now also set `_ShadowReceive`, `_ShadowBorder`, and `_lilShadowCasterBias`. Faces
+  use a 0.3 shadow border, eyes 0.1, everything else 0.5; faces and eyes also get a 0.05 shadow caster
+  bias.
+
+### Removed
+
+- Unused P/Invoke entry points `MMDBulletPhysicsSetRigidBodyTransform` and
+  `MMDBulletPhysicsGetRigidBodyMotionTransform`. The batched `MMDBulletPhysicsGetRigidBodyMotionTransforms`
+  replaces them.
+
 ## [0.1.1] - 2026-06-28
 
 ### Added
+
 - Per-slot external material overrides. `PMXImportOptions.materialOverrides` supplies a `Material` per
   generated slot instead of a generated one, surfaced in the importer inspector via a new **Materials**
   tab (Standard/Override creation modes, per-slot remap list, and an "Extract Materials..." action).
@@ -18,12 +41,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `MMDConstants.k_VMDNativeFrameRate` (30 fps) constant.
 
 ### Changed
+
 - Edge-drawing PMX materials now use lilToon's outline-capable variant (`Hidden/lilToonMultiOutline`);
   the plain `lilToonMulti` shader has no outline pass. URP and built-in fallbacks still drop edges.
 - Reorganized editor scripted importers and inspectors into `Editor/Importers/`, with shared VMD
   progress reporting extracted to `VMDClipProgress`.
 
 ### Fixed
+
 - lilToon outline width now converts correctly into lilToon's 1 cm slider unit (previously over-scaled),
   and outline color is no longer affected by scene lighting, matching MMD's flat edges.
 
@@ -32,6 +57,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 First release of Unity MMD Tools (UMT).
 
 ### Added
+
 - PMX 2.0 model import (with PMX 2.1 read compatibility): meshes, materials, bones with bindposes, and
   vertex-morph blend shapes, generated as sub-assets of the imported `.pmx`.
 - MMD runtime: `MMDTransformManager` for MMD transform order, constraints, and IK solving, plus an

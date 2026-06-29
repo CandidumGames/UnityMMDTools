@@ -29,12 +29,6 @@ namespace UMT
         public bool createAvatar = true;
         /// <summary>Optional custom texture loader; when null, the default file-based loader is used.</summary>
         public Func<PMXModel, PMXImportOptions, Texture2D[]> loadTextures;
-        /// <summary>UV-space blit shader used by alpha-coverage detection.</summary>
-        public Shader uvBlitShader;
-        /// <summary>Compute shader used by alpha-coverage detection.</summary>
-        public ComputeShader alphaDetectorShader;
-        /// <summary>Square render target size used for alpha-coverage detection.</summary>
-        public int alphaDetectionTextureSize = 1024;
         /// <summary>Alpha-coverage value below which a material is treated as transparent.</summary>
         public float alphaDetectionThreshold = 0.99f;
         /// <summary>Alpha-coverage value at or above which a transparent material keeps Z-write enabled.</summary>

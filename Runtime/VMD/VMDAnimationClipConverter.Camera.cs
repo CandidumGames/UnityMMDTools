@@ -8,7 +8,8 @@ namespace UMT
 {
     public static partial class VMDAnimationClipConverter
     {
-        private const string k_CameraFieldOfViewProperty = "field of view";
+        /// <summary>Animated property name (on <see cref="Camera"/>) carrying the camera field of view.</summary>
+        public const string k_CameraFieldOfViewProperty = "field of view";
 
         /// <summary>Default name of the camera rig child transform that carries the camera movement and orientation.</summary>
         public const string k_DefaultCameraTargetName = "CameraTarget";
@@ -27,10 +28,10 @@ namespace UMT
         /// <param name="cameraChildName">Name of the rig child transform (relative to the clip root) that carries the camera.</param>
         /// <param name="timingCallback">Optional callback invoked with a stage label and elapsed time for timing measurements.</param>
         /// <param name="progress">Optional progress callback.</param>
-        /// <returns>The generated <see cref="AnimationClip"/>.</returns>
+        /// <returns>The generated <see cref="VMDCameraClipData"/>.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="animation"/> is null.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the VMD animation contains no camera frames.</exception>
-        public static AnimationClip ConvertCamera(
+        public static VMDCameraClipData ConvertCamera(
             VMDAnimation animation,
             float frameRate = 30.0f,
             Action<string, TimeSpan> timingCallback = null,
@@ -46,11 +47,7 @@ namespace UMT
             }
 
             ReportProgress(progress, Stage.Setup, 0, 0);
-            AnimationClip clip = new AnimationClip
-            {
-                frameRate = frameRate,
-                legacy = false,
-            };
+            VMDCameraClipData cameraData = new VMDCameraClipData();
 
             uint lastFrame = GetLastCameraFrame(animation);
             int upsample = (int)(frameRate / MMDConstants.k_VMDNativeFrameRate);
@@ -69,37 +66,102 @@ namespace UMT
                     frameRate,
                     ref buffers);
 
-                string cameraPath = k_DefaultCameraTargetName + "/" + k_DefaultCameraChildName;
-                SetCameraCurve(clip, k_DefaultCameraTargetName, typeof(Transform), "localPosition.x", buffers.positionX);
-                SetCameraCurve(clip, k_DefaultCameraTargetName, typeof(Transform), "localPosition.y", buffers.positionY);
-                SetCameraCurve(clip, k_DefaultCameraTargetName, typeof(Transform), "localPosition.z", buffers.positionZ);
-                SetCameraCurve(clip, k_DefaultCameraTargetName, typeof(Transform), "localRotation.x", buffers.rotationX);
-                SetCameraCurve(clip, k_DefaultCameraTargetName, typeof(Transform), "localRotation.y", buffers.rotationY);
-                SetCameraCurve(clip, k_DefaultCameraTargetName, typeof(Transform), "localRotation.z", buffers.rotationZ);
-                SetCameraCurve(clip, k_DefaultCameraTargetName, typeof(Transform), "localRotation.w", buffers.rotationW);
-                SetCameraCurve(clip, cameraPath, typeof(Transform), "localPosition.z", buffers.cameraDistanceZ);
-                SetCameraCurve(clip, cameraPath, typeof(Camera), k_CameraFieldOfViewProperty, buffers.fieldOfView);
+                FillCameraClipData(cameraData, in buffers);
             }
 
             ReportProgress(progress, Stage.CameraConversion, frameCount, frameCount);
-
-            using (UMTTiming.Measure(timingCallback, "Finalization"))
-            {
-                ReportProgress(progress, Stage.Finalization, 0, 0);
-                clip.EnsureQuaternionContinuity();
-            }
+            ReportProgress(progress, Stage.Finalization, 0, 0);
 
             buffers.Dispose();
             sortedFrames.Dispose();
             ReportProgress(progress, Stage.Complete, 1, 1);
-            return clip;
+            return cameraData;
         }
 
-        private static void SetCameraCurve(AnimationClip clip, string path, Type type, string propertyName, NativeArray<Keyframe> keyframes)
+        /// <summary>
+        /// Asynchronously converts the camera section of a VMD animation into an <see cref="AnimationClip"/> for a two-node camera
+        /// rig. The clip root carries the camera center (look-at target) movement and orientation, and a child
+        /// transform named <paramref name="cameraChildName"/> is offset along its local Z axis by the camera distance
+        /// and carries the <see cref="Camera"/> field-of-view curve.
+        /// </summary>
+        /// <param name="frameBudget">Frame budget for yielding.</param>
+        /// <param name="animation">The parsed VMD animation whose camera frames are converted.</param>
+        /// <param name="frameRate">Frames per second of the generated clip. The native 30 fps VMD timeline is sub-sampled when this is a higher integer multiple (60 or 120), preserving the clip's real-time duration.</param>
+        /// <param name="cameraChildName">Name of the rig child transform (relative to the clip root) that carries the camera.</param>
+        /// <param name="timingCallback">Optional callback invoked with a stage label and elapsed time for timing measurements.</param>
+        /// <param name="progress">Optional progress callback.</param>
+        /// <returns>The generated <see cref="VMDCameraClipData"/>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="animation"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the VMD animation contains no camera frames.</exception>
+        public static async Awaitable<VMDCameraClipData> ConvertCameraAsync(
+            UMTFrameBudget frameBudget,
+            VMDAnimation animation,
+            float frameRate = 30.0f,
+            Action<string, TimeSpan> timingCallback = null,
+            ProgressCallback progress = null)
+        {
+            if (animation == null)
+            {
+                throw new ArgumentNullException(nameof(animation));
+            }
+            if (animation.cameraFrames.Length == 0)
+            {
+                throw new InvalidOperationException("The VMD animation contains no camera frames.");
+            }
+
+            ReportProgress(progress, Stage.Setup, 0, 0);
+            VMDCameraClipData cameraData = new VMDCameraClipData();
+
+            uint lastFrame = GetLastCameraFrame(animation);
+            int upsample = (int)(frameRate / MMDConstants.k_VMDNativeFrameRate);
+            int frameCount = checked((int)lastFrame * upsample + 1);
+            ReportProgress(progress, Stage.CameraConversion, 0, frameCount);
+
+            NativeArray<VMDCameraFrame> sortedFrames = BuildSortedCameraFrames(animation, Allocator.Persistent);
+            CameraCurveBuffers buffers = new CameraCurveBuffers(frameCount, Allocator.Persistent);
+            await frameBudget.YieldIfNeeded();
+
+            using (UMTTiming.Measure(timingCallback, "Camera Conversion"))
+            {
+                AnimationMath.BakeCameraFrames(
+                    in sortedFrames,
+                    frameCount,
+                    MMDConstants.k_MMDUnitToUnityUnit,
+                    frameRate,
+                    ref buffers);
+                await frameBudget.YieldIfNeeded();
+
+                FillCameraClipData(cameraData, in buffers);
+            }
+            await frameBudget.YieldIfNeeded();
+
+            ReportProgress(progress, Stage.CameraConversion, frameCount, frameCount);
+            ReportProgress(progress, Stage.Finalization, 0, 0);
+            await frameBudget.YieldIfNeeded();
+            buffers.Dispose();
+            sortedFrames.Dispose();
+            ReportProgress(progress, Stage.Complete, 1, 1);
+            return cameraData;
+        }
+
+        private static void FillCameraClipData(VMDCameraClipData cameraData, in CameraCurveBuffers buffers)
+        {
+            cameraData.targetPositionX = BuildCameraCurve(buffers.positionX);
+            cameraData.targetPositionY = BuildCameraCurve(buffers.positionY);
+            cameraData.targetPositionZ = BuildCameraCurve(buffers.positionZ);
+            cameraData.targetRotationX = BuildCameraCurve(buffers.rotationX);
+            cameraData.targetRotationY = BuildCameraCurve(buffers.rotationY);
+            cameraData.targetRotationZ = BuildCameraCurve(buffers.rotationZ);
+            cameraData.targetRotationW = BuildCameraCurve(buffers.rotationW);
+            cameraData.cameraLocalPositionZ = BuildCameraCurve(buffers.cameraDistanceZ);
+            cameraData.fieldOfView = BuildCameraCurve(buffers.fieldOfView);
+        }
+
+        private static AnimationCurve BuildCameraCurve(NativeArray<Keyframe> keyframes)
         {
             Keyframe[] managedKeyframes = keyframes.ToArray();
             ApplyLinearTangents(managedKeyframes);
-            clip.SetCurve(path, type, propertyName, new AnimationCurve(managedKeyframes));
+            return new AnimationCurve(managedKeyframes);
         }
 
         private static uint GetLastCameraFrame(VMDAnimation animation)

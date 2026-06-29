@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using UnityEngine;
 
 namespace UMT
 {
@@ -157,6 +158,40 @@ namespace UMT
             }
 
             return builder.ToString();
+        }
+    }
+
+    /// <summary>
+    /// A frame budget that yields control back to the Unity main thread when the elapsed time exceeds a specified threshold, allowing for responsive UI and preventing long frame stalls during heavy processing.
+    /// </summary>
+    public sealed class UMTFrameBudget
+    {
+        private readonly double m_BudgetMs;
+        private readonly Stopwatch m_Stopwatch = new();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UMTFrameBudget"/> class with the specified time budget in milliseconds.
+        /// </summary>
+        /// <param name="budgetMs">The time budget in milliseconds. If the elapsed time
+        /// exceeds this value, the next call to <see cref="YieldIfNeeded"/> will yield control back to the Unity main thread.</param>
+        public UMTFrameBudget(double budgetMs)
+        {
+            m_BudgetMs = budgetMs;
+            m_Stopwatch.Start();
+        }
+
+        /// <summary>
+        /// Yields control back to the Unity main thread if the elapsed time exceeds the specified budget.
+        /// </summary>
+        public async Awaitable YieldIfNeeded()
+        {
+            if (m_Stopwatch.Elapsed.TotalMilliseconds < m_BudgetMs)
+            {
+                return;
+            }
+
+            await Awaitable.NextFrameAsync();
+            m_Stopwatch.Restart();
         }
     }
 }

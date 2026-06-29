@@ -162,7 +162,8 @@ namespace UMT.Editor
                 timingCallback = timingCollector.RecordTiming,
             };
 
-            AnimationClip generatedClip = VMDAnimationClipConverter.Convert(animation, m_PMXModel, options, ReportConvertProgress);
+            VMDModelClipData clipData = VMDAnimationClipConverter.Convert(animation, m_PMXModel, options, ReportConvertProgress);
+            AnimationClip generatedClip = VMDClipDataBuilder.BuildAnimationClip(clipData, options.frameRate);
             EditorUtility.DisplayProgressBar("VMD Clip Converter", "Saving AnimationClip", 0.95f);
             using (UMTTiming.Measure(timingCollector.RecordTiming, "Asset Saving"))
             {
@@ -189,11 +190,13 @@ namespace UMT.Editor
                 animation = VMDReader.Read(bytes);
             }
 
-            AnimationClip generatedClip = VMDAnimationClipConverter.ConvertCamera(
+            float cameraFrameRate = (float)(int)m_CameraFrameRate;
+            VMDCameraClipData cameraData = VMDAnimationClipConverter.ConvertCamera(
                 animation,
-                frameRate: (float)(int)m_CameraFrameRate,
+                frameRate: cameraFrameRate,
                 timingCallback: timingCollector.RecordTiming,
                 progress: ReportConvertProgress);
+            AnimationClip generatedClip = VMDClipDataBuilder.BuildCameraAnimationClip(cameraData, cameraFrameRate);
             EditorUtility.DisplayProgressBar("VMD Clip Converter", "Saving AnimationClip", 0.95f);
             using (UMTTiming.Measure(timingCollector.RecordTiming, "Asset Saving"))
             {

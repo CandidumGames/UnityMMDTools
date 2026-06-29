@@ -194,6 +194,97 @@ namespace UMT
             return result;
         }
 
+        /// <summary>
+        /// Asynchronously builds the Unity object graph (textures, materials, bones, meshes, renderers, and MMD
+        /// runtime components) from an already-parsed PMX model, without parsing or renaming, yielding control back
+        /// to the Unity main thread according to <paramref name="frameBudget"/>.
+        /// </summary>
+        /// <param name="frameBudget">The frame budget used to yield control during long-running build phases.</param>
+        /// <param name="model">Parsed PMX model to build from.</param>
+        /// <param name="options">Import options; a default instance is used when null.</param>
+        /// <returns>The import result containing the built Unity objects.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="model"/> is null.</exception>
+        public static async Awaitable<PMXImportResult> BuildUnityObjectsAsync(UMTFrameBudget frameBudget, PMXModel model, PMXImportOptions options = null)
+        {
+            if (model == null)
+            {
+                throw new ArgumentNullException(nameof(model));
+            }
+            options ??= new PMXImportOptions();
+
+            PMXImportResult result = new PMXImportResult
+            {
+                model = model,
+            };
+
+            string modelName = PMXUtilities.GetModelName(model, options);
+            result.root = new GameObject(modelName);
+            if (options.parent != null)
+            {
+                result.root.transform.SetParent(options.parent, false);
+            }
+
+            List<PMXMorphLinkedMaterialGroup> materialGroups =
+                PMXMorphBuilder.BuildMorphLinkedMaterialGroups(model);
+            await frameBudget.YieldIfNeeded();
+
+            using (UMTTiming.Measure(options.timingCallback, "Load Textures"))
+            {
+                result.texturesByIndex = LoadTextures(model, options, result);
+                foreach (Texture2D texture in result.texturesByIndex)
+                {
+                    if (texture != null && !result.textures.Contains(texture))
+                    {
+                        result.textures.Add(texture);
+                    }
+                }
+            }
+            await frameBudget.YieldIfNeeded();
+
+            using (UMTTiming.Measure(options.timingCallback, "Build Materials"))
+            {
+                result.materials.AddRange(PMXMaterialBuilder.Build(model, options, modelName, result.texturesByIndex));
+            }
+            await frameBudget.YieldIfNeeded();
+
+            Matrix4x4[] bindposes;
+            using (UMTTiming.Measure(options.timingCallback, "Build Skeleton"))
+            {
+                result.bones = PMXBoneBuilder.BuildBones(model, result.root.transform);
+                bindposes = PMXBoneBuilder.BuildBindposes(result.root.transform, result.bones);
+            }
+            await frameBudget.YieldIfNeeded();
+
+            if (options.createAvatar || result.mmdTransformResult.transformManager != null)
+            {
+                using (UMTTiming.Measure(options.timingCallback, "Build Avatar"))
+                {
+                    result.avatarResult = PMXAvatarBuilder.Build(model, result.root, result.bones, modelName, RequireResources(options, "build a humanoid avatar"));
+                }
+                await frameBudget.YieldIfNeeded();
+            }
+
+            using (UMTTiming.Measure(options.timingCallback, "Build Meshes and Renderers"))
+            {
+                result.meshes.AddRange(PMXMeshBuilder.Build(model, modelName, materialGroups, bindposes));
+                PMXRendererBuilder.Build(model, result.root, result.meshes, result.materials, result.bones);
+            }
+            await frameBudget.YieldIfNeeded();
+
+            using (UMTTiming.Measure(options.timingCallback, "Build Runtime"))
+            {
+                result.mmdTransformResult = MMDTransformBuilder.Build(model, result.root, result.bones);
+
+                if (result.mmdTransformResult.transformManager != null)
+                {
+                    MMDTransformBuilder.RefreshInitialTransforms(result.mmdTransformResult.transformManager);
+                }
+            }
+            await frameBudget.YieldIfNeeded();
+
+            return result;
+        }
+
         private static Texture2D[] LoadTextures(PMXModel model, PMXImportOptions options, PMXImportResult result)
         {
             return options.loadTextures != null

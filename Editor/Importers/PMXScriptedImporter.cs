@@ -14,8 +14,6 @@ namespace UMT.Editor
     [ScriptedImporter(1, new[] { "pmx" })]
     public sealed class PMXScriptedImporter : ScriptedImporter
     {
-        /// <summary>Project path of the alpha-detector compute shader used by the material builder.</summary>
-        public const string k_AlphaDetectorShaderPath = "Packages/com.candidumgames.unitymmdtools/Shaders/AlphaDetector.compute";
         [SerializeField] private bool m_CreateAvatar = false;
         [SerializeField] private bool m_GenerateDebugData = false;
         [SerializeField] private PMXMaterialCreationMode m_MaterialCreationMode = PMXMaterialCreationMode.Standard;
@@ -52,8 +50,6 @@ namespace UMT.Editor
                 strictVersion = true,
                 parent = null,
                 loadTextures = (model, opts) => PMXProjectTextures.Load(model, ctx.assetPath),
-                uvBlitShader = Shader.Find("Hidden/UMT/UVBlit"),
-                alphaDetectorShader = AssetDatabase.LoadAssetAtPath<ComputeShader>(k_AlphaDetectorShaderPath),
                 timingCallback = timingCollector.RecordTiming,
             };
 
@@ -98,9 +94,10 @@ namespace UMT.Editor
                         ? "VMDClip"
                         : $"{vmdAnimation.name}_Clip";
                     string progressTitle = $"Converting VMD {i + 1}/{m_VMDAnimations.Count}";
-                    AnimationClip clip = VMDAnimationClipConverter.Convert(
+                    VMDModelClipData clipData = VMDAnimationClipConverter.Convert(
                         vmdAnimation, model, vmdOptions,
                         (stage, frame, totalFrames) => VMDClipProgress.Report(progressTitle, clipName, stage, frame, totalFrames));
+                    AnimationClip clip = VMDClipDataBuilder.BuildAnimationClip(clipData, vmdOptions.frameRate);
                     clip.name = clipName;
                     ctx.AddObjectToAsset(clipName, clip);
                 }

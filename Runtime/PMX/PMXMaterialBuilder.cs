@@ -1,6 +1,13 @@
+using B83.Image.BMP;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading;
+using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -23,6 +30,9 @@ namespace UMT
         private static readonly int s_BaseColorProperty = Shader.PropertyToID("_Color");
         private static readonly int s_BaseTextureProperty = Shader.PropertyToID("_MainTex");
         private static readonly int s_ShadowColorProperty = Shader.PropertyToID("_ShadowColor");
+        private static readonly int s_ShadowReceiveProperty = Shader.PropertyToID("_ShadowReceive");
+        private static readonly int s_ShadowBorderProperty = Shader.PropertyToID("_ShadowBorder");
+        private static readonly int s_lilShadowCasterBiasProperty = Shader.PropertyToID("_lilShadowCasterBias");
         private static readonly int s_Shadow2ndColorProperty = Shader.PropertyToID("_Shadow2ndColor");
         private static readonly int s_ShadowBorderColorProperty = Shader.PropertyToID("_ShadowBorderColor");
         private static readonly int s_ShadowColorTextureProperty = Shader.PropertyToID("_ShadowColorTex");
@@ -77,10 +87,18 @@ namespace UMT
         public static List<Material> Build(PMXModel model, PMXImportOptions options, string modelName, Texture2D[] texturesByIndex)
         {
             List<Material> materials = new List<Material>(model.materials.Length);
-            Mesh mesh = BuildTemporaryMesh(model);
+            // The imported texture assets in texturesByIndex may be compressed and/or non-readable (editor
+            // import settings), which corrupts CPU alpha sampling. Decode the original source files into raw
+            // Color32 pixels instead, cached per resolved path for the duration of this build.
+            SourcePixelCache sourcePixels = new SourcePixelCache(model, options);
+            int indicesOffset = 0;
             for (int i = 0; i < model.materials.Length; ++i)
             {
                 PMXMaterial pmxMaterial = model.materials[i];
+                int faceIndexStart = indicesOffset;
+                int faceIndexCount = pmxMaterial.faceIndexCount;
+                indicesOffset += faceIndexCount;
+
                 Texture2D mainTexture = GetTexture(texturesByIndex, pmxMaterial.textureIndex);
                 Texture2D sphereTexture = GetTexture(texturesByIndex, pmxMaterial.sphereTextureIndex);
                 string renamedName = pmxMaterial.renamedName.ToString();
@@ -94,13 +112,12 @@ namespace UMT
                     continue;
                 }
 
+                SourcePixels mainPixels = sourcePixels.Get(pmxMaterial.textureIndex);
                 (bool isBelowAlphaCoverageThreshold, float alphaCoverage, bool anyPixelOpaque) alphaDetection = DetectAlphaCoverage(
-                        mainTexture,
-                        mesh,
-                        i,
-                        options.uvBlitShader,
-                        options.alphaDetectorShader,
-                        options.alphaDetectionTextureSize,
+                        mainPixels,
+                        model,
+                        faceIndexStart,
+                        faceIndexCount,
                         options.alphaDetectionThreshold);
                 bool shouldBeTransparent = alphaDetection.isBelowAlphaCoverageThreshold || pmxMaterial.diffuse.a < 1.0f;
                 float alphaCoverage = Mathf.Min(alphaDetection.alphaCoverage, pmxMaterial.diffuse.a);
@@ -108,56 +125,53 @@ namespace UMT
                 bool transparentWithZWrite = anyPixelOpaque || alphaCoverage >= options.alphaCoverageZWriteThreshold;
                 Material material = BuildMaterial(pmxMaterial, mainTexture, sphereTexture, materialName, shouldBeTransparent, transparentWithZWrite);
 
-                material.renderQueue += i;
+                material.renderQueue = shouldBeTransparent ? 3000 + i : 2500 + i;
 
                 materials.Add(material);
             }
-            PMXUtilities.DestroyRuntimeObject(mesh);
             return materials;
         }
 
-        /// <summary>
-        /// Builds a temporary UV-only mesh, with one submesh per material, used by alpha-coverage detection.
-        /// The caller is responsible for destroying the returned mesh.
-        /// </summary>
-        /// <param name="model">PMX model providing vertices, UVs, indices, and materials.</param>
-        /// <returns>The temporary mesh used for alpha detection.</returns>
-        public static Mesh BuildTemporaryMesh(PMXModel model)
+        private static bool IsFaceMaterial(PMXMaterial pmxMaterial)
         {
-            Mesh mesh = new Mesh
+            string[] faceHeuristicName =
             {
-                name = "TemporaryMesh",
+                "face",
+                "skin",
+                "body",
+                "head",
+                "kao",
+                "kawa",
+                "hifu",
+                "hada",
+                "lian",
             };
+            return HeuristicDetect(pmxMaterial.renamedName.ToString(), faceHeuristicName);
+        }
 
-            Vector3[] vertices = new Vector3[model.vertices.Length];
-            Vector2[] uvs = new Vector2[model.vertices.Length];
-            for (int i = 0; i < model.vertices.Length; ++i)
+        private static bool IsEyeMaterial(PMXMaterial pmxMaterial)
+        {
+            string[] faceHeuristicName =
             {
-                PMXVertex vertex = model.vertices[i];
-                uvs[i] = new Vector2(vertex.uv.x, 1.0f - vertex.uv.y);
-            }
-            mesh.SetVertices(vertices);
-            mesh.SetUVs(0, uvs);
+                "eye",
+                "iris",
+                "hitomi",
+                "yan",
+            };
+            return HeuristicDetect(pmxMaterial.renamedName.ToString(), faceHeuristicName);
+        }
 
-            mesh.SetIndexBufferParams(model.indices.Length, IndexFormat.UInt32);
-            mesh.SetIndexBufferData(model.indices, 0, 0, model.indices.Length, MeshUpdateFlags.DontRecalculateBounds);
-            mesh.subMeshCount = model.materials.Length;
-
-            int indicesOffset = 0;
-            for (int materialIndex = 0; materialIndex < model.materials.Length; ++materialIndex)
+        private static bool HeuristicDetect(string name, string[] heuristics)
+        {
+            string lowerName = name.ToLowerInvariant();
+            foreach (string heuristic in heuristics)
             {
-                int faceIndexCount = model.materials[materialIndex].faceIndexCount;
-                mesh.SetSubMesh(materialIndex, new SubMeshDescriptor
+                if (lowerName.Contains(heuristic))
                 {
-                    indexStart = indicesOffset,
-                    indexCount = faceIndexCount,
-                    topology = MeshTopology.Triangles
-                });
-                indicesOffset += faceIndexCount;
+                    return true;
+                }
             }
-            mesh.UploadMeshData(true);
-
-            return mesh;
+            return false;
         }
 
         private static void ConfigureLilToonShading(Material material, PMXMaterial pmxMaterial, Texture2D mainTexture, Texture2D sphereTexture, bool isDoubleSided, bool drawsEdge)
@@ -168,7 +182,23 @@ namespace UMT
                 (pmxMaterial.diffuse.g + pmxMaterial.ambient.y) * 0.5f,
                 (pmxMaterial.diffuse.b + pmxMaterial.ambient.z) * 0.5f,
                 1.0f);
+            bool isEyeMaterial = IsEyeMaterial(pmxMaterial);
+            bool isFaceMaterial = IsFaceMaterial(pmxMaterial);
             SetColorIfPresent(material, s_ShadowColorProperty, ambientColor);
+            SetFloatIfPresent(material, s_ShadowReceiveProperty, 1.0f);
+            SetFloatIfPresent(material, s_lilShadowCasterBiasProperty, isFaceMaterial || isEyeMaterial ? 0.05f : 0.0f);
+            if (isFaceMaterial)
+            {
+                SetFloatIfPresent(material, s_ShadowBorderProperty, 0.3f);
+            }
+            else if (isEyeMaterial)
+            {
+                SetFloatIfPresent(material, s_ShadowBorderProperty, 0.1f);
+            }
+            else
+            {
+                SetFloatIfPresent(material, s_ShadowBorderProperty, 0.5f);
+            }
             SetColorIfPresent(material, s_Shadow2ndColorProperty, new Color(ambientColor.r, ambientColor.g, ambientColor.b, 0.0f));
             SetColorIfPresent(material, s_ShadowBorderColorProperty, borderColor);
             SetFloatIfPresent(material, s_UseShadowProperty, 1.0f);
@@ -222,11 +252,8 @@ namespace UMT
             SetFloatIfPresent(material, s_URPSurfaceProperty, 1.0f);
             SetFloatIfPresent(material, s_URPBlendProperty, 0.0f);
             SetFloatIfPresent(material, s_URPZWriteProperty, transparentWithZWrite ? 1.0f : 0.0f);
-            material.SetOverrideTag("RenderType", "Transparent");
-            material.renderQueue = transparentWithZWrite
-                ? (int)RenderQueue.GeometryLast + 1
-                : (int)RenderQueue.Transparent;
-            SetKeywordIfPresent(material, k_URPSurfaceTypeTransparentKeyword, true);
+
+            SetKeywordIfPresent(material, k_UnityUIClipRectKeyword, true);
         }
 
         private static void ConfigureURPTransparent(Material material, bool transparentWithZWrite)
@@ -237,9 +264,6 @@ namespace UMT
             SetFloatIfPresent(material, s_URPDstBlendProperty, (float)BlendMode.OneMinusSrcAlpha);
             SetFloatIfPresent(material, s_URPZWriteProperty, transparentWithZWrite ? 1.0f : 0.0f);
             material.SetOverrideTag("RenderType", "Transparent");
-            material.renderQueue = transparentWithZWrite
-                ? (int)RenderQueue.GeometryLast + 1
-                : (int)RenderQueue.Transparent;
             SetKeywordIfPresent(material, k_URPSurfaceTypeTransparentKeyword, true);
         }
 
@@ -248,9 +272,6 @@ namespace UMT
             // Built-in uses a dedicated Unlit/Transparent shader, so blending is already
             // baked into the shader; only the render order needs to be set explicitly.
             material.SetOverrideTag("RenderType", "Transparent");
-            material.renderQueue = transparentWithZWrite
-                ? (int)RenderQueue.GeometryLast + 1
-                : (int)RenderQueue.Transparent;
         }
 
         private static Texture2D GetTexture(Texture2D[] texturesByIndex, int textureIndex)
@@ -260,7 +281,7 @@ namespace UMT
 
         private static Material BuildMaterial(PMXMaterial pmxMaterial, Texture2D mainTexture, Texture2D sphereTexture, string materialName, bool transparent, bool transparentWithZWrite)
         {
-            bool drawsEdge = (pmxMaterial.drawingFlags & PMXMaterial.DrawingFlags.DrawEdge) != 0;
+            bool drawsEdge = (pmxMaterial.drawingFlags & PMXMaterial.DrawingFlags.DrawEdge) != 0 && !transparent;
             Shader shader = GetShader(transparent, drawsEdge, out ShaderKind shaderKind);
             if (shader == null)
             {
@@ -282,7 +303,6 @@ namespace UMT
 
             bool isDoubleSided = (pmxMaterial.drawingFlags & PMXMaterial.DrawingFlags.DoubleSided) != 0;
             SetFloatIfPresent(material, s_CullModeProperty, isDoubleSided ? (float)CullMode.Off : (float)CullMode.Back);
-            SetKeywordIfPresent(material, k_UnityUIClipRectKeyword, true);
 
             if (shaderKind == ShaderKind.LilToon)
             {
@@ -369,109 +389,334 @@ namespace UMT
 
         #region Transparent Material Detection
 
-        private const int k_ResultCount = 3;
-        private const int k_ThreadGroupSize = 8;
         private const float k_AlphaCoverageScale = 255.0f;
-        private const string k_KernelName = "DetectAlpha";
-        private static readonly int s_MainTexProperty = Shader.PropertyToID("_MainTex");
-        private static readonly int s_AlphaTextureProperty = Shader.PropertyToID("_AlphaTexture");
-        private static readonly int s_ResultProperty = Shader.PropertyToID("_Result");
-        private static readonly int s_TextureSizeProperty = Shader.PropertyToID("_TextureSize");
+        // Indices into the job's shared result array, accumulated atomically across worker threads.
+        private const int k_ResultCoveredCount = 0;
+        private const int k_ResultAlphaSum = 1;
+        private const int k_ResultAnyOpaque = 2;
+        private const int k_ResultCount = 3;
 
         /// <summary>
-        /// Measures the alpha coverage of a material's texture over its UV footprint using a synchronous
-        /// command-buffer GPU readback, to decide whether the material should be rendered as transparent.
+        /// Measures the alpha coverage of a material's texture over its UV footprint on the CPU, sampling the
+        /// raw source pixels at every vertex UV and every triangle centroid (center of gravity) with a
+        /// Burst-compiled parallel job, to decide whether the material should be rendered as transparent.
         /// </summary>
-        /// <param name="texture">Texture to measure; a white texture is used when null.</param>
-        /// <param name="temporaryMesh">UV-only mesh whose submesh defines the sampled footprint.</param>
-        /// <param name="subMeshIndex">Submesh index corresponding to the material being measured.</param>
-        /// <param name="uvBlitShader">UV-space blit shader feeding the detection compute shader.</param>
-        /// <param name="alphaDetectorShader">Compute shader that accumulates alpha statistics.</param>
-        /// <param name="textureSize">Square render target size used for sampling.</param>
+        /// <param name="sourcePixels">Decoded source-file pixels; an invalid value is treated as fully opaque white.</param>
+        /// <param name="model">PMX model providing vertices, UVs, and triangle indices.</param>
+        /// <param name="faceIndexStart">Start offset into <see cref="PMXModel.indices"/> for this material.</param>
+        /// <param name="faceIndexCount">Number of indices this material consumes (a multiple of three).</param>
         /// <param name="alphaThreshold">Coverage value below which the material is considered transparent.</param>
         /// <returns>
         /// A tuple of whether coverage is below the threshold, the measured average coverage, and whether
         /// any sampled pixel was fully opaque.
         /// </returns>
-        /// <exception cref="ArgumentNullException">Thrown when the temporary mesh or a required shader is null.</exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when the submesh index or texture size is invalid.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the model is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the index range is invalid.</exception>
         public static (bool isBelowAlphaCoverageThreshold, float alphaCoverage, bool anyPixelOpaque) DetectAlphaCoverage(
-            Texture2D texture,
-            Mesh temporaryMesh,
-            int subMeshIndex,
-            Shader uvBlitShader,
-            ComputeShader alphaDetectorShader,
-            int textureSize,
+            SourcePixels sourcePixels,
+            PMXModel model,
+            int faceIndexStart,
+            int faceIndexCount,
             float alphaThreshold)
         {
-            if (temporaryMesh == null)
+            if (model == null)
             {
-                throw new ArgumentNullException(nameof(temporaryMesh));
+                throw new ArgumentNullException(nameof(model));
             }
-            if (uvBlitShader == null)
+            if (faceIndexStart < 0 || faceIndexCount < 0 || faceIndexStart + faceIndexCount > model.indices.Length)
             {
-                throw new ArgumentNullException(nameof(uvBlitShader));
-            }
-            if (alphaDetectorShader == null)
-            {
-                throw new ArgumentNullException(nameof(alphaDetectorShader));
-            }
-            if (subMeshIndex < 0 || subMeshIndex >= temporaryMesh.subMeshCount)
-            {
-                throw new ArgumentOutOfRangeException(nameof(subMeshIndex), subMeshIndex, "Sub-mesh index is out of range.");
-            }
-            if (textureSize <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(textureSize), textureSize, "Texture size must be positive.");
+                throw new ArgumentOutOfRangeException(nameof(faceIndexStart), faceIndexStart, "Face index range is out of bounds.");
             }
 
-            RenderTexture renderTexture = RenderTexture.GetTemporary(textureSize, textureSize, 0, UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_UNorm);
-            renderTexture.filterMode = FilterMode.Point;
-
-            Material uvMaterial = new Material(uvBlitShader)
+            int triangleCount = faceIndexCount / 3;
+            // A material with no geometry contributes no samples; treat it as fully opaque so it is never
+            // forced transparent, exactly as the GPU path's empty-footprint readback did.
+            if (triangleCount == 0)
             {
-                hideFlags = HideFlags.HideAndDontSave,
+                return (false, 1.0f, true);
+            }
+
+            // Compact this material's geometry: a UV per referenced vertex and re-based triangle indices,
+            // so the job can sample uv[i] for i < vertexCount and compute centroids for the rest on the fly.
+            Dictionary<uint, int> remappedVertices = new Dictionary<uint, int>(faceIndexCount);
+            NativeArray<float2> uvs = new NativeArray<float2>(faceIndexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<int> indices = new NativeArray<int>(faceIndexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            int vertexCount = 0;
+            for (int index = 0; index < faceIndexCount; ++index)
+            {
+                uint vertexIndex = model.indices[faceIndexStart + index];
+                if (!remappedVertices.TryGetValue(vertexIndex, out int remapped))
+                {
+                    remapped = vertexCount++;
+                    remappedVertices[vertexIndex] = remapped;
+                    uvs[remapped] = model.vertices[(int)vertexIndex].uv;
+                }
+                indices[index] = remapped;
+            }
+
+            // The job's [ReadOnly] NativeArray field must always be assigned for the job-safety system, even
+            // when there is no texture; a one-element placeholder stands in and is ignored via hasTexture.
+            bool hasTexture = sourcePixels.IsValid;
+            NativeArray<Color32> pixels = hasTexture
+                ? new NativeArray<Color32>(sourcePixels.pixels, Allocator.TempJob)
+                : new NativeArray<Color32>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+
+            NativeArray<int> result = new NativeArray<int>(k_ResultCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+
+            DetectAlphaJob job = new DetectAlphaJob
+            {
+                uvs = uvs,
+                indices = indices,
+                vertexCount = vertexCount,
+                pixels = pixels,
+                textureWidth = sourcePixels.width,
+                textureHeight = sourcePixels.height,
+                hasTexture = hasTexture,
+                result = result,
             };
+            job.Schedule(vertexCount + triangleCount, 64).Complete();
 
-            MaterialPropertyBlock properties = new MaterialPropertyBlock();
-            properties.SetTexture(s_MainTexProperty, texture != null ? texture : Texture2D.whiteTexture);
-
-            int kernel = alphaDetectorShader.FindKernel(k_KernelName);
-            ComputeBuffer resultBuffer = new ComputeBuffer(k_ResultCount, sizeof(uint), ComputeBufferType.Structured);
-            resultBuffer.SetData(new uint[k_ResultCount]);
-
-            int threadGroups = Mathf.CeilToInt(textureSize / (float)k_ThreadGroupSize);
-            CommandBuffer commandBuffer = new CommandBuffer
-            {
-                name = "PMX Material Alpha Detection",
-            };
-            commandBuffer.SetRenderTarget(renderTexture);
-            commandBuffer.ClearRenderTarget(false, true, Color.white);
-            commandBuffer.DrawMesh(temporaryMesh, Matrix4x4.identity, uvMaterial, subMeshIndex, 0, properties);
-            commandBuffer.SetComputeTextureParam(alphaDetectorShader, kernel, s_AlphaTextureProperty, renderTexture);
-            commandBuffer.SetComputeBufferParam(alphaDetectorShader, kernel, s_ResultProperty, resultBuffer);
-            commandBuffer.SetComputeIntParams(alphaDetectorShader, s_TextureSizeProperty, textureSize, textureSize);
-            commandBuffer.DispatchCompute(alphaDetectorShader, kernel, threadGroups, threadGroups, 1);
-            NativeArray<uint> resultBufferArray = new NativeArray<uint>(k_ResultCount, Allocator.Persistent);
-            commandBuffer.RequestAsyncReadbackIntoNativeArray(ref resultBufferArray, resultBuffer, request => { });
-            commandBuffer.WaitAllAsyncReadbackRequests();
-            Graphics.ExecuteCommandBuffer(commandBuffer);
-            commandBuffer.Release();
-
-            float alphaCoverage = resultBufferArray[0] > 0
-                ? resultBufferArray[1] / (resultBufferArray[0] * k_AlphaCoverageScale)
+            int coveredSamples = result[k_ResultCoveredCount];
+            float alphaCoverage = coveredSamples > 0
+                ? result[k_ResultAlphaSum] / (coveredSamples * k_AlphaCoverageScale)
                 : 1.0f;
             bool isBelowAlphaCoverageThreshold = alphaCoverage < alphaThreshold;
-            bool anyPixelOpaque = resultBufferArray[2] > 0;
+            bool anyPixelOpaque = result[k_ResultAnyOpaque] != 0;
 
-            resultBuffer.Release();
-            RenderTexture.ReleaseTemporary(renderTexture);
-            PMXUtilities.DestroyRuntimeObject(uvMaterial);
-            resultBufferArray.Dispose();
+            uvs.Dispose();
+            indices.Dispose();
+            result.Dispose();
+            pixels.Dispose();
 
             return (isBelowAlphaCoverageThreshold, alphaCoverage, anyPixelOpaque);
         }
-    }
 
-    #endregion
+        /// <summary>Decoded source-file pixels for one texture: a tightly-packed bottom-up <see cref="Color32"/> grid.</summary>
+        public readonly struct SourcePixels
+        {
+            /// <summary>Bottom-up, row-major RGBA pixels; <c>null</c> when no source texture was decoded.</summary>
+            public readonly Color32[] pixels;
+            public readonly int width;
+            public readonly int height;
+
+            public SourcePixels(Color32[] pixels, int width, int height)
+            {
+                this.pixels = pixels;
+                this.width = width;
+                this.height = height;
+            }
+
+            /// <summary>True when the pixel grid is present and matches its dimensions.</summary>
+            public bool IsValid => pixels != null && width > 0 && height > 0 && pixels.Length >= width * height;
+        }
+
+        /// <summary>
+        /// Decodes a PMX model's texture files into raw <see cref="SourcePixels"/> on demand, caching each
+        /// resolved file so it is decoded only once per build. Decoding reads the original source bytes rather
+        /// than the imported texture asset, so it is unaffected by editor compression or read/write settings.
+        /// BMP and TGA are decoded straight to <see cref="Color32"/> arrays; other formats go through a
+        /// throwaway in-memory decode that never produces a compressed asset.
+        /// </summary>
+        private sealed class SourcePixelCache
+        {
+            private readonly PMXModel m_Model;
+            private readonly string m_BaseDirectory;
+            private readonly Dictionary<int, SourcePixels> m_ByTextureIndex = new Dictionary<int, SourcePixels>();
+
+            public SourcePixelCache(PMXModel model, PMXImportOptions options)
+            {
+                m_Model = model;
+                m_BaseDirectory = !string.IsNullOrEmpty(options.textureBaseDirectory)
+                    ? options.textureBaseDirectory
+                    : Path.GetDirectoryName(options.sourcePath);
+            }
+
+            /// <summary>Returns the decoded pixels for a texture index, or an invalid value when unavailable.</summary>
+            public SourcePixels Get(int textureIndex)
+            {
+                if (textureIndex < 0 || textureIndex >= m_Model.texturePaths.Length)
+                {
+                    return default;
+                }
+                if (m_ByTextureIndex.TryGetValue(textureIndex, out SourcePixels cached))
+                {
+                    return cached;
+                }
+
+                SourcePixels decoded = Decode(m_Model.texturePaths[textureIndex].ToString());
+                m_ByTextureIndex[textureIndex] = decoded;
+                return decoded;
+            }
+
+            private SourcePixels Decode(string texturePath)
+            {
+                string fullPath = ResolvePath(texturePath);
+                if (string.IsNullOrEmpty(fullPath))
+                {
+                    return default;
+                }
+
+                byte[] bytes = File.ReadAllBytes(fullPath);
+                string extension = Path.GetExtension(fullPath);
+
+                if (string.Equals(extension, ".tga", StringComparison.OrdinalIgnoreCase))
+                {
+                    using MemoryStream stream = new MemoryStream(bytes, false);
+                    Color32[] pixels = TGALoader.LoadTGA(stream, out int width, out int height, out int _);
+                    return new SourcePixels(pixels, width, height);
+                }
+
+                if (string.Equals(extension, ".bmp", StringComparison.OrdinalIgnoreCase))
+                {
+                    BMPImage bmp = new BMPLoader().LoadBMP(bytes);
+                    int bmpWidth = bmp.info.absWidth;
+                    int bmpHeight = bmp.info.absHeight;
+                    // BMPImage.imageData is already bottom-up for positive heights; a negative height means the
+                    // rows are stored top-down, so flip to the bottom-up order the sampler expects (this
+                    // mirrors what BMPImage.ToTexture2D does before SetPixels32).
+                    if (bmp.info.height < 0)
+                    {
+                        FlipRowsInPlace(bmp.imageData, bmpWidth, bmpHeight);
+                    }
+                    return new SourcePixels(bmp.imageData, bmpWidth, bmpHeight);
+                }
+
+                // PNG/JPG: decode through a throwaway in-memory texture. LoadImage produces uncompressed,
+                // readable RGBA32 pixels independent of any imported asset's compression settings.
+                Texture2D temporary = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                ImageConversion.LoadImage(temporary, bytes);
+                SourcePixels decoded = new SourcePixels(temporary.GetPixels32(), temporary.width, temporary.height);
+                PMXUtilities.DestroyRuntimeObject(temporary);
+                return decoded;
+            }
+
+            private string ResolvePath(string texturePath)
+            {
+                if (string.IsNullOrWhiteSpace(texturePath)
+                    || string.IsNullOrEmpty(m_BaseDirectory)
+                    || !Directory.Exists(m_BaseDirectory))
+                {
+                    return null;
+                }
+
+                string[] candidates =
+                {
+                    Path.Combine(m_BaseDirectory, texturePath),
+                    Path.Combine(m_BaseDirectory, texturePath.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar)),
+                };
+                foreach (string candidate in candidates)
+                {
+                    string resolved = Path.GetFullPath(candidate);
+                    if (File.Exists(resolved))
+                    {
+                        return resolved;
+                    }
+                }
+
+                string fileName = Path.GetFileName(texturePath);
+                if (string.IsNullOrEmpty(fileName))
+                {
+                    return null;
+                }
+                foreach (string file in Directory.GetFiles(m_BaseDirectory, "*", SearchOption.AllDirectories))
+                {
+                    if (string.Equals(Path.GetFileName(file), fileName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return file;
+                    }
+                }
+                return null;
+            }
+
+            /// <summary>Reverses the row order of a row-major pixel grid in place (top-down to bottom-up).</summary>
+            private static void FlipRowsInPlace(Color32[] pixels, int width, int height)
+            {
+                for (int y = 0; y < height / 2; ++y)
+                {
+                    int topRow = y * width;
+                    int bottomRow = (height - 1 - y) * width;
+                    for (int x = 0; x < width; ++x)
+                    {
+                        (pixels[topRow + x], pixels[bottomRow + x]) = (pixels[bottomRow + x], pixels[topRow + x]);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Burst-compiled parallel job that point-samples a material's texture once per work item: vertex UVs
+        /// for items below <see cref="vertexCount"/>, and triangle centroids (computed on the fly from
+        /// <see cref="indices"/>) for the rest. Each worker accumulates into the shared <see cref="result"/>
+        /// array atomically.
+        /// </summary>
+        [BurstCompile]
+        private unsafe struct DetectAlphaJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float2> uvs;
+            [ReadOnly] public NativeArray<int> indices;
+            public int vertexCount;
+            [ReadOnly] public NativeArray<Color32> pixels;
+            public int textureWidth;
+            public int textureHeight;
+            public bool hasTexture;
+            // Shared across all work items; every write is an atomic Interlocked accumulation, so the
+            // parallel-for aliasing restriction is intentionally disabled.
+            [NativeDisableParallelForRestriction] public NativeArray<int> result;
+
+            public void Execute(int workItem)
+            {
+                float2 uv;
+                if (workItem < vertexCount)
+                {
+                    uv = uvs[workItem];
+                }
+                else
+                {
+                    int triangle = workItem - vertexCount;
+                    int indexBase = triangle * 3;
+                    uv = (uvs[indices[indexBase + 0]] + uvs[indices[indexBase + 1]] + uvs[indices[indexBase + 2]]) / 3.0f;
+                }
+
+                byte alpha = SampleAlpha(uv);
+
+                // Every sample counts toward coverage so alpha-0 texels drag the average down, matching the
+                // GPU pass which averaged alpha over the whole rasterized footprint (its green-channel mask
+                // marked every covered texel, not just the non-transparent ones).
+                int* basePointer = (int*)result.GetUnsafePtr();
+                Interlocked.Increment(ref basePointer[k_ResultCoveredCount]);
+                Interlocked.Add(ref basePointer[k_ResultAlphaSum], alpha);
+                if (alpha == 255)
+                {
+                    Interlocked.Exchange(ref basePointer[k_ResultAnyOpaque], 1);
+                }
+            }
+
+            /// <summary>
+            /// Point-samples the texture alpha at the given UV. An absent texture is treated as fully opaque
+            /// white, matching the GPU pass's white-texture fallback.
+            /// </summary>
+            private byte SampleAlpha(float2 uv)
+            {
+                if (!hasTexture)
+                {
+                    return 255;
+                }
+
+                // The source pixels are bottom-up (row 0 = bottom), so flip V to map PMX UV space onto them,
+                // and wrap so tiled UVs sample within bounds.
+                float u = uv.x - math.floor(uv.x);
+                float v = 1.0f - uv.y;
+                v -= math.floor(v);
+
+                int x = (int)(u * textureWidth);
+                int y = (int)(v * textureHeight);
+                x = math.clamp(x, 0, textureWidth - 1);
+                y = math.clamp(y, 0, textureHeight - 1);
+
+                return pixels[y * textureWidth + x].a;
+            }
+        }
+
+        #endregion
+    }
 }

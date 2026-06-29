@@ -11,20 +11,6 @@ namespace UMT
     public static partial class VMDAnimationClipConverter
     {
 
-        private static void SetCurveIfPresent(AnimationClip clip, string path, string propertyName, Keyframe[] keyframes, bool preserveTangents)
-        {
-            if (keyframes == null)
-            {
-                return;
-            }
-
-            if (!preserveTangents)
-            {
-                ApplyLinearTangents(keyframes);
-            }
-            clip.SetCurve(path, typeof(Transform), propertyName, new AnimationCurve(keyframes));
-        }
-
         private static bool CanWritePositionCurves(PMXModel model, int boneIndex)
         {
             return boneIndex >= 0 &&
