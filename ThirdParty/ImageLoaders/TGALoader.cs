@@ -5,84 +5,86 @@ using System;
 using System.IO;
 using UnityEngine;
 
-public static class TGALoader
+namespace UMT.ThirdParty
 {
-
-    public static Texture2D LoadTGA(string fileName)
+    public static class TGALoader
     {
-        using (var imageFile = File.OpenRead(fileName))
+        public static Texture2D LoadTGA(string fileName)
         {
-            return LoadTGA(imageFile);
-        }
-    }
-
-    public static Texture2D LoadTGA(Stream TGAStream)
-    {
-        int width, height, bitDepth;
-        Color32[] pulledColors = LoadTGA(TGAStream, out width, out height, out bitDepth);
-
-        Texture2D tex = new Texture2D(width, height);
-
-        tex.SetPixels32(pulledColors);
-        tex.Apply();
-        return tex;
-    }
-
-    public static Color32[] LoadTGA(Stream TGAStream, out int width, out int height, out int bitDepth)
-    {
-        using (BinaryReader r = new BinaryReader(TGAStream))
-        {
-            // Skip some header info we don't care about.
-            // Even if we did care, we have to move the stream seek point to the beginning,
-            // as the previous method in the workflow left it at the end.
-            r.BaseStream.Seek(12, SeekOrigin.Begin);
-
-            width = r.ReadInt16();
-            height = r.ReadInt16();
-            bitDepth = r.ReadByte();
-
-            // Skip a byte of header information we don't care about.
-            r.BaseStream.Seek(1, SeekOrigin.Current);
-
-            Color32[] pulledColors = new Color32[width * height];
-
-            if (bitDepth == 32)
+            using (var imageFile = File.OpenRead(fileName))
             {
-                for (int i = 0; i < width * height; i++)
-                {
-                    byte red = r.ReadByte();
-                    byte green = r.ReadByte();
-                    byte blue = r.ReadByte();
-                    byte alpha = r.ReadByte();
-
-                    pulledColors [i] = new Color32(blue, green, red, alpha);
-                }
-            } else if (bitDepth == 24)
-            {
-                for (int i = 0; i < width * height; i++)
-                {
-                    byte red = r.ReadByte();
-                    byte green = r.ReadByte();
-                    byte blue = r.ReadByte();
-
-                    pulledColors [i] = new Color32(blue, green, red, 1);
-                }
-            } else if (bitDepth == 8)
-            {
-                for (int i = 0; i < width * height; i++)
-                {
-                    byte red = r.ReadByte();
-                    byte green = red;
-                    byte blue = red;
-
-                    pulledColors[i] = new Color32(blue, green, red, 255);
-                }
-            } else
-            {
-                throw new Exception("TGA texture had non 32/24/8 bit depth.");
+                return LoadTGA(imageFile);
             }
+        }
 
-            return pulledColors;
+        public static Texture2D LoadTGA(Stream TGAStream)
+        {
+            int width, height, bitDepth;
+            Color32[] pulledColors = LoadTGA(TGAStream, out width, out height, out bitDepth);
+
+            Texture2D tex = new Texture2D(width, height);
+
+            tex.SetPixels32(pulledColors);
+            tex.Apply();
+            return tex;
+        }
+
+        public static Color32[] LoadTGA(Stream TGAStream, out int width, out int height, out int bitDepth)
+        {
+            using (BinaryReader r = new BinaryReader(TGAStream))
+            {
+                // Skip some header info we don't care about.
+                // Even if we did care, we have to move the stream seek point to the beginning,
+                // as the previous method in the workflow left it at the end.
+                r.BaseStream.Seek(12, SeekOrigin.Begin);
+
+                width = r.ReadInt16();
+                height = r.ReadInt16();
+                bitDepth = r.ReadByte();
+
+                // Skip a byte of header information we don't care about.
+                r.BaseStream.Seek(1, SeekOrigin.Current);
+
+                Color32[] pulledColors = new Color32[width * height];
+
+                if (bitDepth == 32)
+                {
+                    for (int i = 0; i < width * height; i++)
+                    {
+                        byte red = r.ReadByte();
+                        byte green = r.ReadByte();
+                        byte blue = r.ReadByte();
+                        byte alpha = r.ReadByte();
+
+                        pulledColors [i] = new Color32(blue, green, red, alpha);
+                    }
+                } else if (bitDepth == 24)
+                {
+                    for (int i = 0; i < width * height; i++)
+                    {
+                        byte red = r.ReadByte();
+                        byte green = r.ReadByte();
+                        byte blue = r.ReadByte();
+
+                        pulledColors [i] = new Color32(blue, green, red, 1);
+                    }
+                } else if (bitDepth == 8)
+                {
+                    for (int i = 0; i < width * height; i++)
+                    {
+                        byte red = r.ReadByte();
+                        byte green = red;
+                        byte blue = red;
+
+                        pulledColors[i] = new Color32(blue, green, red, 255);
+                    }
+                } else
+                {
+                    throw new Exception("TGA texture had non 32/24/8 bit depth.");
+                }
+
+                return pulledColors;
+            }
         }
     }
 }

@@ -21,7 +21,7 @@ namespace UMT.Editor
             string text = FormatProgressText(stage, frame, totalFrames);
             if (!string.IsNullOrEmpty(itemLabel))
             {
-                text = $"{itemLabel} — {text}";
+                text = $"{itemLabel} - {text}";
             }
             EditorUtility.DisplayProgressBar(title, text, progress);
         }

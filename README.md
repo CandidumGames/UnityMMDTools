@@ -2,6 +2,8 @@
 
 UMT is a toolkit for maximally reproducing MikuMikuDance (MMD) behaviour in Unity. It supports drag-and-drop import of PMX models, converts VMD motion to `AnimationClip` assets and runs Physics for MMD rigid bodies on a native Bullet solver.
 
+Available on the [Unity Asset Store](https://assetstore.unity.com/packages/package/9648399).
+
 ## What it does
 
 - Imports PMX models: skinned meshes, materials, bones with bind poses, and vertex-morph blend shapes, all as sub-assets of the `.pmx`.

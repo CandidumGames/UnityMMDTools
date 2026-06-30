@@ -71,7 +71,7 @@ namespace UMT
             if (string.Equals(extension, ".tga", StringComparison.OrdinalIgnoreCase))
             {
                 using MemoryStream stream = new MemoryStream(textureBytes, false);
-                return TGALoader.LoadTGA(stream);
+                return ThirdParty.TGALoader.LoadTGA(stream);
             }
 
             if (string.Equals(extension, ".bmp", StringComparison.OrdinalIgnoreCase))

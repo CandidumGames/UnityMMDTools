@@ -238,7 +238,7 @@ namespace UMT
         /// </summary>
         /// <remarks>
         /// Runs entirely on the calling (main) thread and yields cooperatively through <paramref name="frameBudget"/>
-        /// rather than offloading to a worker thread, so it stays responsive — and functional — on single-threaded
+        /// rather than offloading to a worker thread, so it stays responsive  and functional  on single-threaded
         /// platforms such as WebGL.
         /// </remarks>
         /// <param name="frameBudget">Frame budget used to yield back to the main thread between stages; may be null to run without yielding.</param>

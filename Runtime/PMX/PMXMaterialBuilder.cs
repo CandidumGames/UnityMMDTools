@@ -562,7 +562,7 @@ namespace UMT
                 if (string.Equals(extension, ".tga", StringComparison.OrdinalIgnoreCase))
                 {
                     using MemoryStream stream = new MemoryStream(bytes, false);
-                    Color32[] pixels = TGALoader.LoadTGA(stream, out int width, out int height, out int _);
+                    Color32[] pixels = ThirdParty.TGALoader.LoadTGA(stream, out int width, out int height, out int _);
                     return new SourcePixels(pixels, width, height);
                 }
 
