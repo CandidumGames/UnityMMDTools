@@ -238,6 +238,19 @@ namespace UMT
         }
 
         /// <summary>
+        /// Resets the companion physics manager to its initial state, clearing all rigid-body velocities and forces.
+        /// </summary>
+        public void ResetPhysics()
+        {
+            if (physicsManager == null)
+            {
+                return;
+            }
+
+            physicsManager.ResetPhysics();
+        }
+
+        /// <summary>
         /// Disposes the companion physics manager's native physics, if present.
         /// </summary>
         internal void DisposePhysics()
