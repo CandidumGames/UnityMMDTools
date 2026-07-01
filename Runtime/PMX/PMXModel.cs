@@ -6,9 +6,7 @@ using UnityEngine;
 namespace UMT
 {
     /// <summary>
-    /// <see cref="ScriptableObject"/> holding a fully parsed PMX (MikuMikuDance) model: header, model info,
-    /// vertices, face indices, texture paths, materials, bones, morphs, display frames, rigid bodies, and joints.
-    /// Position-like values are already scaled from MMD units to Unity units during parsing.
+    /// <see cref="ScriptableObject"/> holding a fully parsed PMX (MikuMikuDance) model: header, model info, vertices, face indices, texture paths, materials, bones, morphs, display frames, rigid bodies, and joints. Position-like values are already scaled from MMD units to Unity units during parsing.
     /// </summary>
     public class PMXModel : ScriptableObject
     {
@@ -36,11 +34,15 @@ namespace UMT
         public PMXJoint[] joints = Array.Empty<PMXJoint>();
     }
 
-    /// <summary>PMX file header describing the file version, text encoding, and the byte size of each index type.</summary>
+    /// <summary>
+    /// PMX file header describing the file version, text encoding, and the byte size of each index type.
+    /// </summary>
     [Serializable]
     public struct PMXHeader
     {
-        /// <summary>Text encoding used for PMX strings in the file.</summary>
+        /// <summary>
+        /// Text encoding used for PMX strings in the file.
+        /// </summary>
         public enum TextEncoding : byte
         {
             /// <summary>UTF-16 little-endian encoding.</summary>
@@ -73,7 +75,9 @@ namespace UMT
         public byte rigidBodyIndexSize;
     }
 
-    /// <summary>PMX model information: localized names and comment text.</summary>
+    /// <summary>
+    /// PMX model information: localized names and comment text.
+    /// </summary>
     [Serializable]
     public struct PMXModelInfo
     {
@@ -87,7 +91,9 @@ namespace UMT
         public FixedString128Bytes commentEN;
     }
 
-    /// <summary>A single PMX vertex with position, normal, UVs, skinning weight, and edge scale.</summary>
+    /// <summary>
+    /// A single PMX vertex with position, normal, UVs, skinning weight, and edge scale.
+    /// </summary>
     [Serializable]
     public struct PMXVertex
     {
@@ -111,11 +117,15 @@ namespace UMT
         public float edgeScale;
     }
 
-    /// <summary>PMX vertex skinning weight; carries up to four bone influences plus SDEF correction vectors.</summary>
+    /// <summary>
+    /// PMX vertex skinning weight; carries up to four bone influences plus SDEF correction vectors.
+    /// </summary>
     [Serializable]
     public struct PMXWeight
     {
-        /// <summary>Deformation method used for this weight.</summary>
+        /// <summary>
+        /// Deformation method used for this weight.
+        /// </summary>
         public enum Type : byte
         {
             /// <summary>Single bone, full weight.</summary>
@@ -156,11 +166,15 @@ namespace UMT
         public float3 sdefR1;
     }
 
-    /// <summary>A PMX material describing colors, textures, drawing flags, edge (outline), and toon shading data.</summary>
+    /// <summary>
+    /// A PMX material describing colors, textures, drawing flags, edge (outline), and toon shading data.
+    /// </summary>
     [Serializable]
     public struct PMXMaterial
     {
-        /// <summary>Bit flags controlling how a material is drawn.</summary>
+        /// <summary>
+        /// Bit flags controlling how a material is drawn.
+        /// </summary>
         [Flags]
         public enum DrawingFlags : byte
         {
@@ -176,7 +190,9 @@ namespace UMT
             DrawEdge = 0x10,
         }
 
-        /// <summary>Blend mode applied to the sphere (matcap) texture.</summary>
+        /// <summary>
+        /// Blend mode applied to the sphere (matcap) texture.
+        /// </summary>
         public enum SphereTextureMode : byte
         {
             /// <summary>No sphere texture.</summary>
@@ -227,11 +243,15 @@ namespace UMT
         public int faceIndexCount;
     }
 
-    /// <summary>A PMX bone: hierarchy, transform order, optional IK, constraints, fixed/local axes, and external parent data.</summary>
+    /// <summary>
+    /// A PMX bone: hierarchy, transform order, optional IK, constraints, fixed/local axes, and external parent data.
+    /// </summary>
     [Serializable]
     public struct PMXBone
     {
-        /// <summary>Bit flags describing a bone's capabilities and which optional data blocks follow it.</summary>
+        /// <summary>
+        /// Bit flags describing a bone's capabilities and which optional data blocks follow it.
+        /// </summary>
         [Flags]
         public enum Flags : ushort
         {
@@ -299,7 +319,9 @@ namespace UMT
         public PMXIK ik;
     }
 
-    /// <summary>IK (inverse kinematics) chain data attached to an IK driver bone.</summary>
+    /// <summary>
+    /// IK (inverse kinematics) chain data attached to an IK driver bone.
+    /// </summary>
     [Serializable]
     public sealed class PMXIK
     {
@@ -313,7 +335,9 @@ namespace UMT
         public PMXIKLink[] links = Array.Empty<PMXIKLink>();
     }
 
-    /// <summary>A single link (joint) within an IK chain, with optional per-link angle limits.</summary>
+    /// <summary>
+    /// A single link (joint) within an IK chain, with optional per-link angle limits.
+    /// </summary>
     [Serializable]
     public struct PMXIKLink
     {
@@ -327,11 +351,15 @@ namespace UMT
         public float3 upperLimit;
     }
 
-    /// <summary>A PMX morph (deformation target) whose <see cref="type"/> selects the kind of stored offsets.</summary>
+    /// <summary>
+    /// A PMX morph (deformation target) whose <see cref="type"/> selects the kind of stored offsets.
+    /// </summary>
     [Serializable]
     public struct PMXMorph
     {
-        /// <summary>Kind of data a morph applies.</summary>
+        /// <summary>
+        /// Kind of data a morph applies.
+        /// </summary>
         public enum Type : byte
         {
             /// <summary>Combines other morphs by rate.</summary>
@@ -373,13 +401,17 @@ namespace UMT
         public PMXMorphOffset[] offsets;
     }
 
-    /// <summary>Abstract base for a single morph offset entry. Concrete subclasses correspond to <see cref="PMXMorph.Type"/>.</summary>
+    /// <summary>
+    /// Abstract base for a single morph offset entry. Concrete subclasses correspond to <see cref="PMXMorph.Type"/>.
+    /// </summary>
     [Serializable]
     public abstract class PMXMorphOffset
     {
     }
 
-    /// <summary>Offset for a Group or Flip morph that references another morph by index with a blend rate.</summary>
+    /// <summary>
+    /// Offset for a Group or Flip morph that references another morph by index with a blend rate.
+    /// </summary>
     [Serializable]
     public sealed class PMXGroupMorphData : PMXMorphOffset
     {
@@ -389,7 +421,9 @@ namespace UMT
         public float rate;
     }
 
-    /// <summary>Offset for a Vertex morph that displaces a single vertex.</summary>
+    /// <summary>
+    /// Offset for a Vertex morph that displaces a single vertex.
+    /// </summary>
     [Serializable]
     public sealed class PMXVertexMorphData : PMXMorphOffset
     {
@@ -399,7 +433,9 @@ namespace UMT
         public float3 positionOffset;
     }
 
-    /// <summary>Offset for a Bone morph that adds a translation and rotation to a bone.</summary>
+    /// <summary>
+    /// Offset for a Bone morph that adds a translation and rotation to a bone.
+    /// </summary>
     [Serializable]
     public sealed class PMXBoneMorphData : PMXMorphOffset
     {
@@ -411,7 +447,9 @@ namespace UMT
         public quaternion rotation;
     }
 
-    /// <summary>Offset for a UV (or additional UV) morph that displaces a vertex's texture coordinates.</summary>
+    /// <summary>
+    /// Offset for a UV (or additional UV) morph that displaces a vertex's texture coordinates.
+    /// </summary>
     [Serializable]
     public sealed class PMXUVMorphData : PMXMorphOffset
     {
@@ -421,11 +459,15 @@ namespace UMT
         public float4 uvOffset;
     }
 
-    /// <summary>Offset for a Material morph that multiplies or adds to a material's color and texture parameters.</summary>
+    /// <summary>
+    /// Offset for a Material morph that multiplies or adds to a material's color and texture parameters.
+    /// </summary>
     [Serializable]
     public sealed class PMXMaterialMorphData : PMXMorphOffset
     {
-        /// <summary>How a material morph combines with the base material values.</summary>
+        /// <summary>
+        /// How a material morph combines with the base material values.
+        /// </summary>
         public enum Method : byte
         {
             /// <summary>Multiply the base values by the offset.</summary>
@@ -457,7 +499,9 @@ namespace UMT
         public float4 toonTint;
     }
 
-    /// <summary>Offset for an Impulse morph that applies a velocity and torque to a rigid body.</summary>
+    /// <summary>
+    /// Offset for an Impulse morph that applies a velocity and torque to a rigid body.
+    /// </summary>
     [Serializable]
     public sealed class PMXImpulseMorphData : PMXMorphOffset
     {
@@ -471,7 +515,9 @@ namespace UMT
         public float3 torque;
     }
 
-    /// <summary>A PMX display (panel) frame grouping bones and morphs for the editor's manipulation panels.</summary>
+    /// <summary>
+    /// A PMX display (panel) frame grouping bones and morphs for the editor's manipulation panels.
+    /// </summary>
     [Serializable]
     public struct PMXDisplayFrame
     {
@@ -487,11 +533,15 @@ namespace UMT
         public PMXDisplayFrameElement[] elements;
     }
 
-    /// <summary>A single element within a display frame referencing either a bone or a morph.</summary>
+    /// <summary>
+    /// A single element within a display frame referencing either a bone or a morph.
+    /// </summary>
     [Serializable]
     public struct PMXDisplayFrameElement
     {
-        /// <summary>Whether a display frame element points to a bone or a morph.</summary>
+        /// <summary>
+        /// Whether a display frame element points to a bone or a morph.
+        /// </summary>
         public enum Type : byte
         {
             /// <summary>The element references a bone.</summary>
@@ -506,11 +556,15 @@ namespace UMT
         public int targetIndex;
     }
 
-    /// <summary>A PMX rigid body used by the MMD physics pipeline, attached to a related bone.</summary>
+    /// <summary>
+    /// A PMX rigid body used by the MMD physics pipeline, attached to a related bone.
+    /// </summary>
     [Serializable]
     public struct PMXRigidBody
     {
-        /// <summary>Collision shape of a rigid body.</summary>
+        /// <summary>
+        /// Collision shape of a rigid body.
+        /// </summary>
         public enum Shape : byte
         {
             /// <summary>Sphere shape.</summary>
@@ -521,7 +575,9 @@ namespace UMT
             Capsule = 2,
         }
 
-        /// <summary>Physics behavior mode of a rigid body.</summary>
+        /// <summary>
+        /// Physics behavior mode of a rigid body.
+        /// </summary>
         public enum Mode : byte
         {
             /// <summary>Follows its bone (kinematic / bone-driven).</summary>
@@ -566,11 +622,15 @@ namespace UMT
         public Mode mode;
     }
 
-    /// <summary>A PMX joint (constraint) connecting two rigid bodies, with translation/rotation limits and springs.</summary>
+    /// <summary>
+    /// A PMX joint (constraint) connecting two rigid bodies, with translation/rotation limits and springs.
+    /// </summary>
     [Serializable]
     public struct PMXJoint
     {
-        /// <summary>Constraint type of a joint.</summary>
+        /// <summary>
+        /// Constraint type of a joint.
+        /// </summary>
         public enum Type : byte
         {
             /// <summary>Generic 6-DOF spring constraint.</summary>

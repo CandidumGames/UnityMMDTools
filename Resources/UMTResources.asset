@@ -19,5 +19,4 @@ MonoBehaviour:
   m_KawazuSysDic: {fileID: 4900000, guid: f8683fa27a66cc64bad069d19ec509c8, type: 3}
   m_KawazuUnkDic: {fileID: 4900000, guid: 0eb1b0fad18b04a488c74e5724facd32, type: 3}
   m_PinyinDictionaryText: {fileID: 4900000, guid: 6e1e8610206bb904c92156fcf2d2fbd0, type: 3}
-  m_VMDHumanoidPMXModel: {fileID: 11400000, guid: b278b8338d27ac34187d0fadfc5d058e, type: 2}
-  m_VMDHumanoidAvatar: {fileID: 9000000, guid: 1514144e1ac18dc4e84e4ff3e606c777, type: 2}
+  m_SDEFComputeShader: {fileID: 7200000, guid: 1cb50f95434b1614ca1a77775a36278a, type: 3}

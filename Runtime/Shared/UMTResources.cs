@@ -4,8 +4,7 @@ using UnityEngine;
 namespace UMT
 {
     /// <summary>
-    /// <see cref="ScriptableObject"/> holding serialized <see cref="TextAsset"/> references to the resources used by
-    /// PMX import and romanization: rename lists, humanoid avatar mappings, Kawazu/NMeCab dictionary binaries, and the Pinyin dictionary.
+    /// <see cref="ScriptableObject"/> holding serialized <see cref="TextAsset"/> references to the resources used by PMX import and romanization: rename lists, humanoid avatar mappings, Kawazu/NMeCab dictionary binaries, and the Pinyin dictionary.
     /// </summary>
     public sealed class UMTResources : ScriptableObject
     {
@@ -16,6 +15,7 @@ namespace UMT
         [SerializeField] private TextAsset m_KawazuSysDic;
         [SerializeField] private TextAsset m_KawazuUnkDic;
         [SerializeField] private TextAsset m_PinyinDictionaryText;
+        [SerializeField] private ComputeShader m_SDEFComputeShader;
 
         /// <summary>
         /// Gets the JSON <see cref="TextAsset"/> holding the PMX rename lists.
@@ -53,6 +53,11 @@ namespace UMT
         public TextAsset pinyinDictionaryText => m_PinyinDictionaryText;
 
         /// <summary>
+        /// Gets the SDEF skinning <see cref="ComputeShader"/>, or null when GPU SDEF skinning is unavailable.
+        /// </summary>
+        public ComputeShader sdefComputeShader => m_SDEFComputeShader;
+
+        /// <summary>
         /// Returns the PMX rename lists JSON text.
         /// </summary>
         /// <returns>The rename lists JSON content.</returns>
@@ -79,11 +84,7 @@ namespace UMT
         /// <exception cref="InvalidOperationException">Thrown when any required Kawazu binary asset is missing or empty.</exception>
         public KawazuDictionaryData GetKawazuDictionaryData()
         {
-            return new KawazuDictionaryData(
-                GetRequiredBytes(m_KawazuCharBin, nameof(m_KawazuCharBin)),
-                GetRequiredBytes(m_KawazuMatrixBin, nameof(m_KawazuMatrixBin)),
-                GetRequiredBytes(m_KawazuSysDic, nameof(m_KawazuSysDic)),
-                GetRequiredBytes(m_KawazuUnkDic, nameof(m_KawazuUnkDic)));
+            return new KawazuDictionaryData(GetRequiredBytes(m_KawazuCharBin, nameof(m_KawazuCharBin)), GetRequiredBytes(m_KawazuMatrixBin, nameof(m_KawazuMatrixBin)), GetRequiredBytes(m_KawazuSysDic, nameof(m_KawazuSysDic)), GetRequiredBytes(m_KawazuUnkDic, nameof(m_KawazuUnkDic)));
         }
 
         /// <summary>
@@ -128,24 +129,16 @@ namespace UMT
     /// </summary>
     public sealed class KawazuDictionaryData
     {
-        /// <summary>
-        /// The Kawazu character-definition binary bytes.
-        /// </summary>
+        /// <summary>The Kawazu character-definition binary bytes.</summary>
         public readonly byte[] charBin;
 
-        /// <summary>
-        /// The Kawazu connection-matrix binary bytes.
-        /// </summary>
+        /// <summary>The Kawazu connection-matrix binary bytes.</summary>
         public readonly byte[] matrixBin;
 
-        /// <summary>
-        /// The Kawazu system dictionary binary bytes.
-        /// </summary>
+        /// <summary>The Kawazu system dictionary binary bytes.</summary>
         public readonly byte[] systemDictionary;
 
-        /// <summary>
-        /// The Kawazu unknown-word dictionary binary bytes.
-        /// </summary>
+        /// <summary>The Kawazu unknown-word dictionary binary bytes.</summary>
         public readonly byte[] unknownDictionary;
 
         /// <summary>

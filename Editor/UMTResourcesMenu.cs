@@ -7,8 +7,7 @@ using UnityEngine;
 namespace UMT.Editor
 {
     /// <summary>
-    /// Editor menu (<c>Tools/UMT/Create Default Resources</c>) that creates and populates the default
-    /// <see cref="UMTResources"/> asset from the package resource files.
+    /// Editor menu (<c>Tools/UMT/Create Default Resources</c>) that creates and populates the default <see cref="UMTResources"/> asset from the package resource files.
     /// </summary>
     internal static class UMTResourcesMenu
     {
@@ -26,10 +25,10 @@ namespace UMT.Editor
         private const string k_KawazuSysDicPath = k_KawazuDictionaryFolder + "/sys.bytes";
         private const string k_KawazuUnkDicPath = k_KawazuDictionaryFolder + "/unk.bytes";
         private const string k_PinyinDictionaryPath = k_DefaultFolder + "/Pinyin.txt";
+        private const string k_SDEFComputeShaderPath = "Packages/com.candidumgames.unitymmdtools/Shaders/MMDSDEFSkinning.compute";
 
         /// <summary>
-        /// Creates the default <see cref="UMTResources"/> asset (if missing) and assigns the rename list, humanoid
-        /// avatar mapping, Kawazu dictionary, and Pinyin dictionary references from the package resource files.
+        /// Creates the default <see cref="UMTResources"/> asset (if missing) and assigns the rename list, humanoid avatar mapping, Kawazu dictionary, and Pinyin dictionary references from the package resource files.
         /// </summary>
         [MenuItem("Tools/UMT/Create Default Resources")]
         public static void CreateDefaultResources()
@@ -52,6 +51,7 @@ namespace UMT.Editor
             SetObject(serializedObject, "m_KawazuSysDic", LoadRequiredAsset<TextAsset>(k_KawazuSysDicPath));
             SetObject(serializedObject, "m_KawazuUnkDic", LoadRequiredAsset<TextAsset>(k_KawazuUnkDicPath));
             SetObject(serializedObject, "m_PinyinDictionaryText", LoadRequiredAsset<TextAsset>(k_PinyinDictionaryPath));
+            SetObject(serializedObject, "m_SDEFComputeShader", LoadRequiredAsset<ComputeShader>(k_SDEFComputeShaderPath));
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
 
             EditorUtility.SetDirty(umtResources);

@@ -12,14 +12,7 @@ namespace UMT
     public static partial class VMDAnimationClipConverter
     {
 
-        private static void AddMorphCurves(
-            VMDMorphClipData morphs,
-            VMDAnimation animation,
-            PMXModel model,
-            string[][] morphRendererPaths,
-            ref IndexResolver resolver,
-            float frameRate,
-            ProgressCallback progress)
+        private static void AddMorphCurves(VMDMorphClipData morphs, VMDAnimation animation, PMXModel model, string[][] morphRendererPaths, ref IndexResolver resolver, float frameRate, ProgressCallback progress)
         {
             uint lastFrame = GetLastMorphFrame(animation);
             int frameCount = checked((int)lastFrame + 1);
@@ -40,19 +33,7 @@ namespace UMT
             }
             BuildGroupMorphOffsets(model, ref groupMorphOffsets);
 
-            AnimationMath.PrepareMorphData(
-                in nativeMorphFrames,
-                ref resolver,
-                in vertexMorphSelection,
-                in groupMorphOffsets,
-                ref morphSelection,
-                ref samplesByMorph,
-                ref curveMorphIndices,
-                ref keyframesByMorph,
-                ref keyframeCountsByMorph,
-                morphCount,
-                frameCount,
-                frameRate);
+            AnimationMath.PrepareMorphData(in nativeMorphFrames, ref resolver, in vertexMorphSelection, in groupMorphOffsets, ref morphSelection, ref samplesByMorph, ref curveMorphIndices, ref keyframesByMorph, ref keyframeCountsByMorph, morphCount, frameCount, frameRate);
 
             List<string> morphPaths = new List<string>();
             List<string> morphNames = new List<string>();
@@ -115,9 +96,7 @@ namespace UMT
                     }
 
                     int targetMorphIndex = groupOffset.morphIndex;
-                    if (targetMorphIndex < 0 ||
-                        targetMorphIndex >= model.morphs.Length ||
-                        model.morphs[targetMorphIndex].type != PMXMorph.Type.Vertex)
+                    if (targetMorphIndex < 0 || targetMorphIndex >= model.morphs.Length || model.morphs[targetMorphIndex].type != PMXMorph.Type.Vertex)
                     {
                         continue;
                     }

@@ -6,49 +6,27 @@ namespace UMT
 {
     public static partial class VMDAnimationClipConverter
     {
-        // The 6 non-baked bone channels, in the order stored in VMDClipData.curves[6 * boneIndex + channel]:
-        // localPosition x/y/z, localEulerAnglesRaw x/y/z.
+        // The 6 non-baked bone channels, in the order stored in VMDClipData.curves[6 * boneIndex + channel]: localPosition x/y/z, localEulerAnglesRaw x/y/z.
         private const int k_NonBakedBoneChannelCount = 6;
 
-        private static void AddBoneCurves(
-            VMDClipData bones,
-            VMDAnimation animation,
-            PMXModel model,
-            ref MMDTransformManager.SolverContext transformContext,
-            string[] bonePaths,
-            ref IndexResolver resolver,
-            float frameRate,
-            ProgressCallback progress)
+        private static void AddBoneCurves(VMDClipData bones, VMDAnimation animation, PMXModel model, ref MMDTransformManager.SolverContext transformContext, string[] bonePaths, ref IndexResolver resolver, float frameRate, ProgressCallback progress)
         {
             uint lastFrame = GetLastBoneFrame(animation);
             int frameCount = checked((int)lastFrame + 1);
             ReportProgress(progress, Stage.BoneConversion, 0, frameCount);
 
-            ref NativeArray<MMDBoneTransform.BoneSolverData> boneSolverData =
-                ref transformContext.boneSolverData;
+            ref NativeArray<MMDBoneTransform.BoneSolverData> boneSolverData = ref transformContext.boneSolverData;
             int boneCount = boneSolverData.Length;
 
             NativeList<ResolvedBoneFrame> resolvedBoneFrames = BuildSortedResolvedBoneFrames(animation, ref resolver, in boneSolverData, boneCount, frameCount, Allocator.Persistent);
             NativeArray<bool> sourceBoneSelection = new NativeArray<bool>(boneCount, Allocator.Persistent);
             NativeArray<int> sourceTrackIndexByBone = new NativeArray<int>(boneCount, Allocator.Persistent);
             NativeList<int> sourceBoneIndices = new NativeList<int>(Allocator.Persistent);
-            AnimationMath.BuildSourceBoneTracks(
-                in resolvedBoneFrames,
-                ref sourceBoneSelection,
-                ref sourceTrackIndexByBone,
-                ref sourceBoneIndices);
+            AnimationMath.BuildSourceBoneTracks(in resolvedBoneFrames, ref sourceBoneSelection, ref sourceTrackIndexByBone, ref sourceBoneIndices);
 
             NativeArray<BoneSample> boneSamples = new NativeArray<BoneSample>(checked(sourceBoneIndices.Length * frameCount), Allocator.Persistent);
-            AnimationMath.FillCompactBoneSamples(
-                in resolvedBoneFrames,
-                in sourceTrackIndexByBone,
-                ref boneSamples,
-                frameCount);
-            AnimationMath.SeedAndFixSparseBoneSamples(
-                in boneSolverData,
-                in sourceBoneIndices,
-                ref boneSamples,
-                frameCount);
+            AnimationMath.FillCompactBoneSamples(in resolvedBoneFrames, in sourceTrackIndexByBone, ref boneSamples, frameCount);
+            AnimationMath.SeedAndFixSparseBoneSamples(in boneSolverData, in sourceBoneIndices, ref boneSamples, frameCount);
 
             NativeArray<Keyframe> positionX = new NativeArray<Keyframe>(frameCount, Allocator.TempJob);
             NativeArray<Keyframe> positionY = new NativeArray<Keyframe>(frameCount, Allocator.TempJob);
@@ -93,16 +71,7 @@ namespace UMT
                 bool writeRotation = CanWriteRotationCurves(model, boneIndex);
                 if (writePosition || writeRotation)
                 {
-                    AnimationMath.BuildSparseBoneKeyframes(
-                        in sparseSamples,
-                        sampleCount,
-                        frameRate,
-                        ref positionX,
-                        ref positionY,
-                        ref positionZ,
-                        ref eulerX,
-                        ref eulerY,
-                        ref eulerZ);
+                    AnimationMath.BuildSparseBoneKeyframes(in sparseSamples, sampleCount, frameRate, ref positionX, ref positionY, ref positionZ, ref eulerX, ref eulerY, ref eulerZ);
                 }
 
                 int channelStart = checked(boneIndex * k_NonBakedBoneChannelCount);

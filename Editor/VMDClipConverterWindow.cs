@@ -8,8 +8,7 @@ using UnityEngine;
 namespace UMT.Editor
 {
     /// <summary>
-    /// Editor window (<c>Tools/UMT/VMD Clip Converter</c>) that converts a VMD file into an <see cref="AnimationClip"/>
-    /// for a selected PMX prefab and model, supporting runtime-solved or baked-to-FK IK conversion.
+    /// Editor window (<c>Tools/UMT/VMD Clip Converter</c>) that converts a VMD file into an <see cref="AnimationClip"/> for a selected PMX prefab and model, supporting runtime-solved or baked-to-FK IK conversion.
     /// </summary>
     public sealed class VMDClipConverterWindow : EditorWindow
     {
@@ -113,9 +112,7 @@ namespace UMT.Editor
             else
             {
                 m_CameraFrameRate = (CameraFrameRate)EditorGUILayout.EnumPopup("Frame Rate", m_CameraFrameRate);
-                EditorGUILayout.HelpBox(
-                    "Camera VMD converts to a clip targeting a camera rig: the root carries center movement and rotation; a child \"Camera\" carries the distance offset and field of view.",
-                    MessageType.Info);
+                EditorGUILayout.HelpBox("Camera VMD converts to a clip targeting a camera rig: the root carries center movement and rotation; a child \"Camera\" carries the distance offset and field of view.", MessageType.Info);
                 if (GUILayout.Button("Create Camera Rig In Scene"))
                 {
                     CreateCameraRig();
@@ -191,11 +188,7 @@ namespace UMT.Editor
             }
 
             float cameraFrameRate = (float)(int)m_CameraFrameRate;
-            VMDCameraClipData cameraData = VMDAnimationClipConverter.ConvertCamera(
-                animation,
-                frameRate: cameraFrameRate,
-                timingCallback: timingCollector.RecordTiming,
-                progress: ReportConvertProgress);
+            VMDCameraClipData cameraData = VMDAnimationClipConverter.ConvertCamera(animation, frameRate: cameraFrameRate, timingCallback: timingCollector.RecordTiming, progress: ReportConvertProgress);
             AnimationClip generatedClip = VMDClipDataBuilder.BuildCameraAnimationClip(cameraData, cameraFrameRate);
             EditorUtility.DisplayProgressBar("VMD Clip Converter", "Saving AnimationClip", 0.95f);
             using (UMTTiming.Measure(timingCollector.RecordTiming, "Asset Saving"))

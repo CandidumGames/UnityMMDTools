@@ -8,14 +8,12 @@ using UnityEngine;
 namespace UMT.Editor
 {
     /// <summary>
-    /// Editor texture loader that resolves a PMX model's texture paths to project <see cref="Texture2D"/> assets
-    /// through the <see cref="AssetDatabase"/> for the editor import path.
+    /// Editor texture loader that resolves a PMX model's texture paths to project <see cref="Texture2D"/> assets through the <see cref="AssetDatabase"/> for the editor import path.
     /// </summary>
     public static class PMXProjectTextures
     {
         /// <summary>
-        /// Loads each PMX texture into a texture-index map of project <see cref="Texture2D"/> assets, resolving paths
-        /// relative to the source asset directory and falling back to a recursive file-name search.
+        /// Loads each PMX texture into a texture-index map of project <see cref="Texture2D"/> assets, resolving paths relative to the source asset directory and falling back to a recursive file-name search.
         /// </summary>
         /// <param name="model">PMX model providing the texture paths to resolve.</param>
         /// <param name="sourceAssetPath">Project path of the source PMX asset used as the texture lookup base.</param>

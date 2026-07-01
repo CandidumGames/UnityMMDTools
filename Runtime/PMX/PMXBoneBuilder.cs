@@ -3,10 +3,14 @@ using UnityEngine;
 
 namespace UMT
 {
-    /// <summary>Builds Unity bone transforms, their hierarchy, and skinning bindposes from a PMX model.</summary>
+    /// <summary>
+    /// Builds Unity bone transforms, their hierarchy, and skinning bindposes from a PMX model.
+    /// </summary>
     public static class PMXBoneBuilder
     {
-        /// <summary>Creates one <see cref="Transform"/> per PMX bone, parents them, and sets local positions.</summary>
+        /// <summary>
+        /// Creates one <see cref="Transform"/> per PMX bone, parents them, and sets local positions.
+        /// </summary>
         /// <param name="model">PMX model providing bone definitions.</param>
         /// <param name="root">Root transform that parentless bones are attached to.</param>
         /// <returns>The created bone transforms in PMX bone order.</returns>
@@ -23,19 +27,18 @@ namespace UMT
             for (int i = 0; i < model.bones.Length; ++i)
             {
                 PMXBone pmxBone = model.bones[i];
-                Transform parent = pmxBone.parentBoneIndex >= 0 && pmxBone.parentBoneIndex < bones.Length
-                    ? bones[pmxBone.parentBoneIndex]
-                    : root;
+                bool hasParentBone = pmxBone.parentBoneIndex >= 0 && pmxBone.parentBoneIndex < bones.Length;
+                Transform parent = hasParentBone ? bones[pmxBone.parentBoneIndex] : root;
                 bones[i].SetParent(parent, false);
-                bones[i].localPosition = parent == root
-                    ? pmxBone.position
-                    : pmxBone.position - model.bones[pmxBone.parentBoneIndex].position;
+                bones[i].localPosition = hasParentBone ? pmxBone.position - model.bones[pmxBone.parentBoneIndex].position : pmxBone.position;
             }
 
             return bones;
         }
 
-        /// <summary>Computes skinning bindpose matrices for the given bones relative to the root.</summary>
+        /// <summary>
+        /// Computes skinning bindpose matrices for the given bones relative to the root.
+        /// </summary>
         /// <param name="root">Root transform the bindposes are expressed relative to.</param>
         /// <param name="bones">Bone transforms to compute bindposes for.</param>
         /// <returns>One bindpose matrix per bone, in bone order.</returns>
@@ -49,7 +52,9 @@ namespace UMT
             return bindposes;
         }
 
-        /// <summary>Finds the first parentless (root) bone transform, falling back to the first bone.</summary>
+        /// <summary>
+        /// Finds the first parentless (root) bone transform, falling back to the first bone.
+        /// </summary>
         /// <param name="model">PMX model providing bone parent indices.</param>
         /// <param name="bones">Bone transforms corresponding to the model's bones.</param>
         /// <returns>The top-level bone transform, or null when there are no bones.</returns>

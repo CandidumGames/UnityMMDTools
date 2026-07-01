@@ -8,34 +8,20 @@ namespace UMT
     public static partial class VMDAnimationClipConverter
     {
 
-        private static void AddIKCurves(
-            VMDClipData ikToggles,
-            VMDAnimation animation,
-            ref MMDTransformManager.SolverContext transformContext,
-            string[] bonePaths,
-            ref IndexResolver resolver,
-            float frameRate)
+        private static void AddIKCurves(VMDClipData ikToggles, VMDAnimation animation, ref MMDTransformManager.SolverContext transformContext, string[] bonePaths, ref IndexResolver resolver, float frameRate)
         {
             uint lastFrame = GetLastIKFrame(animation);
             int frameCount = checked((int)lastFrame + 1);
-            ref NativeArray<int> ikControllerByBoneIndices =
-                ref transformContext.ikControllerByBoneIndices;
+            ref NativeArray<int> ikControllerByBoneIndices = ref transformContext.ikControllerByBoneIndices;
             int boneCount = transformContext.boneSolverData.Length;
 
             NativeList<ResolvedIKToggleFrame> resolvedIKToggleFrames = BuildSortedResolvedIKToggleFrames(animation, ref resolver, in ikControllerByBoneIndices, boneCount, frameCount, Allocator.Persistent);
             NativeList<int> ikBoneIndices = new NativeList<int>(Allocator.Persistent);
             NativeArray<int> ikTrackIndexByBone = new NativeArray<int>(boneCount, Allocator.Persistent);
-            AnimationMath.BuildIKToggleTracks(
-                in resolvedIKToggleFrames,
-                ref ikTrackIndexByBone,
-                ref ikBoneIndices);
+            AnimationMath.BuildIKToggleTracks(in resolvedIKToggleFrames, ref ikTrackIndexByBone, ref ikBoneIndices);
 
             NativeArray<IKToggleFrameSample> ikSamplesByTrack = new NativeArray<IKToggleFrameSample>(checked(ikBoneIndices.Length * frameCount), Allocator.Persistent);
-            AnimationMath.FillCompactIKToggleSamples(
-                in resolvedIKToggleFrames,
-                in ikTrackIndexByBone,
-                ref ikSamplesByTrack,
-                frameCount);
+            AnimationMath.FillCompactIKToggleSamples(in resolvedIKToggleFrames, in ikTrackIndexByBone, ref ikSamplesByTrack, frameCount);
 
             List<string> togglePaths = new List<string>();
             List<AnimationCurve> toggleCurves = new List<AnimationCurve>();

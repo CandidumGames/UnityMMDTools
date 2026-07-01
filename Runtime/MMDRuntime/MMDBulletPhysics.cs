@@ -7,9 +7,7 @@ using Unity.Mathematics;
 namespace UMT
 {
     /// <summary>
-    /// P/Invoke wrapper around the native <c>UMTNativePlugin</c> plugin. Owns the native
-    /// physics context and centralizes all rigid-body, joint, ground, transform, reset, and
-    /// simulation-step calls into the Bullet-backed MMD physics engine.
+    /// P/Invoke wrapper around the native <c>UMTNativePlugin</c> plugin. Owns the native physics context and centralizes all rigid-body, joint, ground, transform, reset, and simulation-step calls into the Bullet-backed MMD physics engine.
     /// </summary>
     public struct MMDBulletPhysics : IDisposable
     {
@@ -19,7 +17,9 @@ namespace UMT
 #else
         private const string k_DllName = "UMTNativePlugin";
 #endif
-        /// <summary>Whether the underlying native physics context has been created and not yet disposed.</summary>
+        /// <summary>
+        /// Whether the underlying native physics context has been created and not yet disposed.
+        /// </summary>
         public bool isValid => m_NativeContext != IntPtr.Zero;
         private IntPtr m_NativeContext;
 
@@ -143,8 +143,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Blittable joint data marshalled to the native Bullet plugin.
-        /// Field order is layout-critical and must stay in sync with the native struct; do not reorder.
+        /// Blittable joint data marshalled to the native Bullet plugin. Field order is layout-critical and must stay in sync with the native struct; do not reorder.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
         public struct NativeJointData
@@ -176,11 +175,7 @@ namespace UMT
         private static class Native
         {
             [DllImport(k_DllName, CallingConvention = CallingConvention.Cdecl)]
-            public static unsafe extern IntPtr MMDBulletPhysicsCreate(
-                [In] float* gravity,
-                int solverIterations,
-                int maxSubSteps,
-                float fixedTimeStep);
+            public static unsafe extern IntPtr MMDBulletPhysicsCreate([In] float* gravity, int solverIterations, int maxSubSteps, float fixedTimeStep);
 
             [DllImport(k_DllName, CallingConvention = CallingConvention.Cdecl)]
             public static extern void MMDBulletPhysicsDestroy(IntPtr context);
@@ -189,47 +184,25 @@ namespace UMT
             public static extern void MMDBulletPhysicsReset(IntPtr context, uint seed);
 
             [DllImport(k_DllName, CallingConvention = CallingConvention.Cdecl)]
-            public unsafe static extern void MMDBulletPhysicsBuildRigidBodies(
-                IntPtr context,
-                [In] MMDRigidBody.RigidBodySimulationData* rigidBodies,
-                int rigidBodyCount);
+            public unsafe static extern void MMDBulletPhysicsBuildRigidBodies(IntPtr context, [In] MMDRigidBody.RigidBodySimulationData* rigidBodies, int rigidBodyCount);
 
             [DllImport(k_DllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern void MMDBulletPhysicsBuildJoints(
-                IntPtr context,
-                [In] NativeJointData[] joints,
-                int jointCount);
+            public static extern void MMDBulletPhysicsBuildJoints(IntPtr context, [In] NativeJointData[] joints, int jointCount);
 
             [DllImport(k_DllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern void MMDBulletPhysicsBuildGround(
-                IntPtr context,
-                bool enabled,
-                byte groupIndex,
-                short collisionMask);
+            public static extern void MMDBulletPhysicsBuildGround(IntPtr context, bool enabled, byte groupIndex, short collisionMask);
 
             [DllImport(k_DllName, CallingConvention = CallingConvention.Cdecl)]
             public static extern void MMDBulletPhysicsSetGroundCollisionEnabled(IntPtr context, bool enabled);
 
             [DllImport(k_DllName, CallingConvention = CallingConvention.Cdecl)]
-            public unsafe static extern void MMDBulletPhysicsSetRigidBodyTransforms(
-                IntPtr context,
-                nuint rigidBodyCount,
-                [In] float* transforms,
-                [In] int* rigidBodyIndices,
-                bool clearVelocity);
+            public unsafe static extern void MMDBulletPhysicsSetRigidBodyTransforms(IntPtr context, nuint rigidBodyCount, [In] float* transforms, [In] int* rigidBodyIndices, bool clearVelocity);
 
             [DllImport(k_DllName, CallingConvention = CallingConvention.Cdecl)]
-            public unsafe static extern void MMDBulletPhysicsGetRigidBodyMotionTransforms(
-                IntPtr context,
-                nuint rigidBodyCount,
-                [In] int* rigidBodyIndices,
-                [Out] float* transforms);
+            public unsafe static extern void MMDBulletPhysicsGetRigidBodyMotionTransforms(IntPtr context, nuint rigidBodyCount, [In] int* rigidBodyIndices, [Out] float* transforms);
 
             [DllImport(k_DllName, CallingConvention = CallingConvention.Cdecl)]
-            public unsafe static extern void MMDBulletPhysicsShiftRigidBodyPosition(
-                IntPtr context,
-                int rigidBodyIndex,
-                [In] float* delta);
+            public unsafe static extern void MMDBulletPhysicsShiftRigidBodyPosition(IntPtr context, int rigidBodyIndex, [In] float* delta);
 
             [DllImport(k_DllName, CallingConvention = CallingConvention.Cdecl)]
             public static extern void MMDBulletPhysicsStepSimulation(IntPtr context, float elapsedTime);

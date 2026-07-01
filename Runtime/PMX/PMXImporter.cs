@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.ComponentModel.Design.Serialization;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace UMT
 {
-    /// <summary>In-memory result of a PMX import, containing the built Unity objects and all associated import data.</summary>
+    /// <summary>
+    /// In-memory result of a PMX import, containing the built Unity objects and all associated import data.
+    /// </summary>
     public sealed class PMXImportResult
     {
         /// <summary>Root <see cref="GameObject"/> of the imported model hierarchy.</summary>
@@ -36,18 +39,32 @@ namespace UMT
         public readonly List<string> warnings = new List<string>();
     }
 
-    /// <summary>A generated mesh paired with the PMX material indices that map to its submeshes.</summary>
+    /// <summary>
+    /// A generated mesh paired with the PMX material indices that map to its submeshes.
+    /// </summary>
     public sealed class PMXImportedMesh
     {
         /// <summary>The generated Unity mesh.</summary>
         public Mesh mesh;
+        /// <summary>The <see cref="SkinnedMeshRenderer"/> created for this mesh, assigned by the renderer builder.</summary>
+        public SkinnedMeshRenderer renderer;
         /// <summary>PMX material indices, one per submesh, in submesh order.</summary>
         public int[] materialIndices = Array.Empty<int>();
         /// <summary>Generated mesh name.</summary>
         public string name;
+        /// <summary>True when this mesh contains at least one SDEF vertex and uses GPU SDEF skinning.</summary>
+        public bool hasSDEF;
+        /// <summary>True when the SDEF vertex layout includes a tangent attribute (reserved; currently false).</summary>
+        public bool hasTangent;
+        /// <summary>Per-vertex SDEF skinning data in mesh-vertex order; non-null only when <see cref="hasSDEF"/>.</summary>
+        public SDEFVertexData[] sdefVertexData;
+        /// <summary>Vertex-morph table feeding the SDEF compute pass; non-null only when <see cref="hasSDEF"/>.</summary>
+        public MMDMorphTable morphTable;
     }
 
-    /// <summary>Result of optional humanoid avatar construction during import.</summary>
+    /// <summary>
+    /// Result of optional humanoid avatar construction during import.
+    /// </summary>
     public sealed class PMXAvatarBuildResult
     {
         /// <summary>True when a valid humanoid avatar was created.</summary>
@@ -56,10 +73,14 @@ namespace UMT
         public Avatar avatar;
     }
 
-    /// <summary>The single synchronous PMX import/build pipeline that turns PMX data into Unity objects.</summary>
+    /// <summary>
+    /// The single synchronous PMX import/build pipeline that turns PMX data into Unity objects.
+    /// </summary>
     public static class PMXImporter
     {
-        /// <summary>Reads a PMX file from disk, optionally renames, and builds the full Unity import result.</summary>
+        /// <summary>
+        /// Reads a PMX file from disk, optionally renames, and builds the full Unity import result.
+        /// </summary>
         /// <param name="pmxFilePath">Path to the source <c>.pmx</c> file.</param>
         /// <param name="options">Import options; a default instance is used when null.</param>
         /// <param name="cancellationToken">Token used to cancel the import.</param>
@@ -86,7 +107,9 @@ namespace UMT
             return ImportModel(model, options, cancellationToken);
         }
 
-        /// <summary>Reads PMX data from a byte buffer, optionally renames, and builds the full Unity import result.</summary>
+        /// <summary>
+        /// Reads PMX data from a byte buffer, optionally renames, and builds the full Unity import result.
+        /// </summary>
         /// <param name="pmxBytes">Raw PMX file bytes.</param>
         /// <param name="options">Import options; a default instance is used when null.</param>
         /// <param name="cancellationToken">Token used to cancel the import.</param>
@@ -113,8 +136,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Builds the Unity object graph (textures, materials, bones, meshes, renderers, and MMD runtime
-        /// components) from an already-parsed PMX model, without parsing or renaming.
+        /// Builds the Unity object graph (textures, materials, bones, meshes, renderers, and MMD runtime components) from an already-parsed PMX model, without parsing or renaming.
         /// </summary>
         /// <param name="model">Parsed PMX model to build from.</param>
         /// <param name="options">Import options; a default instance is used when null.</param>
@@ -140,8 +162,7 @@ namespace UMT
                 result.root.transform.SetParent(options.parent, false);
             }
 
-            List<PMXMorphLinkedMaterialGroup> materialGroups =
-                PMXMorphBuilder.BuildMorphLinkedMaterialGroups(model);
+            List<PMXMorphLinkedMaterialGroup> materialGroups = PMXMorphBuilder.BuildMorphLinkedMaterialGroups(model);
 
             using (UMTTiming.Measure(options.timingCallback, "Load Textures"))
             {
@@ -187,6 +208,7 @@ namespace UMT
 
                 if (result.mmdTransformResult.transformManager != null)
                 {
+                    BuildSDEFSkinners(model, result, options);
                     MMDTransformBuilder.RefreshInitialTransforms(result.mmdTransformResult.transformManager);
                 }
             }
@@ -195,16 +217,45 @@ namespace UMT
         }
 
         /// <summary>
-        /// Asynchronously builds the Unity object graph (textures, materials, bones, meshes, renderers, and MMD
-        /// runtime components) from an already-parsed PMX model, without parsing or renaming, yielding control back
-        /// to the Unity main thread according to <paramref name="frameBudget"/>.
+        /// Builds the GPU SDEF skinners for meshes that contain SDEF vertices and registers them with the transform manager. Warns and skips when the SDEF compute shader resource is missing.
+        /// </summary>
+        private static void BuildSDEFSkinners(PMXModel model, PMXImportResult result, PMXImportOptions options)
+        {
+            bool anySDEF = false;
+            for (int i = 0; i < result.meshes.Count; ++i)
+            {
+                if (result.meshes[i].hasSDEF)
+                {
+                    anySDEF = true;
+                    break;
+                }
+            }
+            if (!anySDEF)
+            {
+                return;
+            }
+
+            ComputeShader sdefComputeShader = options.umtResources != null ? options.umtResources.sdefComputeShader : null;
+            if (sdefComputeShader == null)
+            {
+                PMXUtilities.AddWarning(result, "SDEF meshes were imported but no SDEF compute shader is assigned on UMTResources; SDEF skinning is disabled for this model.");
+                return;
+            }
+
+            MMDSDEFSkinner[] skinners = MMDSDEFSkinnerBuilder.Build(model, result.meshes);
+            result.mmdTransformResult.transformManager.sdefComputeShader = sdefComputeShader;
+            result.mmdTransformResult.transformManager.RegisterSDEFSkinners(skinners);
+        }
+
+        /// <summary>
+        /// Asynchronously builds the Unity object graph (textures, materials, bones, meshes, renderers, and MMD runtime components) from an already-parsed PMX model, without parsing or renaming, yielding control back to the Unity main thread according to <paramref name="frameBudget"/>.
         /// </summary>
         /// <param name="frameBudget">The frame budget used to yield control during long-running build phases.</param>
         /// <param name="model">Parsed PMX model to build from.</param>
         /// <param name="options">Import options; a default instance is used when null.</param>
         /// <returns>The import result containing the built Unity objects.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="model"/> is null.</exception>
-        public static async Awaitable<PMXImportResult> BuildUnityObjectsAsync(UMTFrameBudget frameBudget, PMXModel model, PMXImportOptions options = null)
+        public static async Task<PMXImportResult> BuildUnityObjectsAsync(UMTFrameBudget frameBudget, PMXModel model, PMXImportOptions options = null)
         {
             if (model == null)
             {
@@ -224,8 +275,7 @@ namespace UMT
                 result.root.transform.SetParent(options.parent, false);
             }
 
-            List<PMXMorphLinkedMaterialGroup> materialGroups =
-                PMXMorphBuilder.BuildMorphLinkedMaterialGroups(model);
+            List<PMXMorphLinkedMaterialGroup> materialGroups = PMXMorphBuilder.BuildMorphLinkedMaterialGroups(model);
             await frameBudget.YieldIfNeeded();
 
             using (UMTTiming.Measure(options.timingCallback, "Load Textures"))
@@ -277,6 +327,7 @@ namespace UMT
 
                 if (result.mmdTransformResult.transformManager != null)
                 {
+                    BuildSDEFSkinners(model, result, options);
                     MMDTransformBuilder.RefreshInitialTransforms(result.mmdTransformResult.transformManager);
                 }
             }

@@ -7,14 +7,12 @@ using UnityEngine;
 namespace UMT
 {
     /// <summary>
-    /// Small shared helpers for PMX import: model naming, file-name sanitization, unique object naming,
-    /// warning collection, and runtime object destruction.
+    /// Small shared helpers for PMX import: model naming, file-name sanitization, unique object naming, warning collection, and runtime object destruction.
     /// </summary>
     public static class PMXUtilities
     {
         /// <summary>
-        /// Resolves a display name for the model, preferring the option source name, then the PMX Japanese name,
-        /// then the PMX English name, then the source file name, falling back to <c>"PMXModel"</c>.
+        /// Resolves a display name for the model, preferring the option source name, then the PMX Japanese name, then the PMX English name, then the source file name, falling back to <c>"PMXModel"</c>.
         /// </summary>
         /// <param name="model">The parsed PMX model whose model info is consulted.</param>
         /// <param name="options">The import options that may supply a source name or source path.</param>
@@ -39,8 +37,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Produces a file-system-safe name by substituting a default when the input is blank and replacing
-        /// invalid file-name characters with underscores.
+        /// Produces a file-system-safe name by substituting a default when the input is blank and replacing invalid file-name characters with underscores.
         /// </summary>
         /// <param name="value">The candidate file name.</param>
         /// <param name="index">An index appended to the default name when <paramref name="value"/> is blank; ignored when negative.</param>
@@ -81,8 +78,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Builds an object name that is unique among the children of <paramref name="parent"/>, combining a prefix
-        /// with the renamed or generated base name and appending a numeric suffix on collision.
+        /// Builds an object name that is unique among the children of <paramref name="parent"/>, combining a prefix with the renamed or generated base name and appending a numeric suffix on collision.
         /// </summary>
         /// <param name="parent">The parent transform whose children are checked for name collisions.</param>
         /// <param name="renamedName">The preferred renamed object name.</param>
@@ -92,13 +88,7 @@ namespace UMT
         /// <param name="excludedChild">An optional child to exclude from collision checks (for example, the object being renamed).</param>
         /// <returns>A name unique among the parent's children.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="parent"/> is <c>null</c>.</exception>
-        public static string GetUniqueGeneratedObjectName(
-            Transform parent,
-            string renamedName,
-            string prefix,
-            string fallbackPrefix,
-            int index,
-            Transform excludedChild = null)
+        public static string GetUniqueGeneratedObjectName(Transform parent, string renamedName, string prefix, string fallbackPrefix, int index, Transform excludedChild = null)
         {
             if (parent == null)
             {
@@ -132,8 +122,7 @@ namespace UMT
             return pathBuilder.ToString();
         }
         /// <summary>
-        /// Returns a name unique according to the supplied existence predicate, appending an incrementing numeric
-        /// suffix until the predicate reports the name as unused.
+        /// Returns a name unique according to the supplied existence predicate, appending an incrementing numeric suffix until the predicate reports the name as unused.
         /// </summary>
         /// <param name="baseName">The desired base name.</param>
         /// <param name="nameExists">A predicate returning <c>true</c> when a candidate name is already taken.</param>
@@ -175,8 +164,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Destroys a Unity object, choosing <see cref="UnityEngine.Object.Destroy(UnityEngine.Object)"/> in play mode and
-        /// <see cref="UnityEngine.Object.DestroyImmediate(UnityEngine.Object)"/> otherwise.
+        /// Destroys a Unity object, choosing <see cref="UnityEngine.Object.Destroy(UnityEngine.Object)"/> in play mode and <see cref="UnityEngine.Object.DestroyImmediate(UnityEngine.Object)"/> otherwise.
         /// </summary>
         /// <param name="value">The object to destroy; ignored when <c>null</c>.</param>
         public static void DestroyRuntimeObject(UnityEngine.Object value)

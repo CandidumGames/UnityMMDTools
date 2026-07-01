@@ -21,6 +21,7 @@ Available on the [Unity Asset Store](https://assetstore.unity.com/packages/packa
 
 - PMX 2.0 (2.1 read compatibility; no 2.1-exclusive features)
 - BDEF1, BDEF2, BDEF4 skinning
+- SDEF skinning (GPU compute skinning at runtime)
 - Vertex morphs (as blend shapes)
 - Group morphs (resolved to their referenced vertex morphs)
 - Bones, bind poses, humanoid avatar
@@ -52,7 +53,6 @@ Available on the [Unity Asset Store](https://assetstore.unity.com/packages/packa
 ## TODO
 
 - Bone morph
-- SDEF deformation (currently imported as BDEF2)
 - iOS, Mac OS and Linux support
 
 ## Not planned

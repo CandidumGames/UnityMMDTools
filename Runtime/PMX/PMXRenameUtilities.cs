@@ -12,7 +12,9 @@ using UnityEngine;
 
 namespace UMT
 {
-    /// <summary>Ordered PMX2FBX-style token replacement lists for general names and morph names.</summary>
+    /// <summary>
+    /// Ordered PMX2FBX-style token replacement lists for general names and morph names.
+    /// </summary>
     [Serializable]
     public sealed class PMXRenameLists
     {
@@ -22,7 +24,9 @@ namespace UMT
         public List<PMXRenameEntry> morphRenameList = new List<PMXRenameEntry>();
     }
 
-    /// <summary>A single ordered token replacement mapping a source substring to its replacement.</summary>
+    /// <summary>
+    /// A single ordered token replacement mapping a source substring to its replacement.
+    /// </summary>
     [Serializable]
     public sealed class PMXRenameEntry
     {
@@ -32,7 +36,9 @@ namespace UMT
         public string to = "";
     }
 
-    /// <summary>Result of a rename pass, recording how many names changed and a full original-to-renamed string map.</summary>
+    /// <summary>
+    /// Result of a rename pass, recording how many names changed and a full original-to-renamed string map.
+    /// </summary>
     public sealed class PMXRenameResult
     {
         /// <summary>Number of Japanese (local) names that changed.</summary>
@@ -42,11 +48,15 @@ namespace UMT
         /// <summary>Per-name record of original and renamed values.</summary>
         public List<PMXStringMapEntry> stringMap = new List<PMXStringMapEntry>();
 
-        /// <summary>Total number of names that changed across local and English names.</summary>
+        /// <summary>
+        /// Total number of names that changed across local and English names.
+        /// </summary>
         public int totalRenameCount => localNameRenameCount + englishNameRenameCount;
     }
 
-    /// <summary>A single original-to-renamed mapping entry within a rename result.</summary>
+    /// <summary>
+    /// A single original-to-renamed mapping entry within a rename result.
+    /// </summary>
     [Serializable]
     public sealed class PMXStringMapEntry
     {
@@ -63,8 +73,7 @@ namespace UMT
     }
 
     /// <summary>
-    /// Applies ordered PMX2FBX-style token replacements followed by Japanese (Kawazu) and Chinese (Pinyin)
-    /// romanization to produce ASCII-safe, unique PMX material, bone, morph, rigid body, and joint names.
+    /// Applies ordered PMX2FBX-style token replacements followed by Japanese (Kawazu) and Chinese (Pinyin) romanization to produce ASCII-safe, unique PMX material, bone, morph, rigid body, and joint names.
     /// </summary>
     public static class PMXRenameUtilities
     {
@@ -118,7 +127,9 @@ namespace UMT
         private static string m_KawazuDictionaryPath;
         private static UMTResources m_PinyinDictionaryResources;
 
-        /// <summary>Loads the default rename lists from the rename-list JSON stored in the given resources.</summary>
+        /// <summary>
+        /// Loads the default rename lists from the rename-list JSON stored in the given resources.
+        /// </summary>
         /// <param name="umtResources">UMT resources providing the rename-list JSON.</param>
         /// <returns>The deserialized rename lists.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="umtResources"/> is null.</exception>
@@ -132,7 +143,9 @@ namespace UMT
             return LoadRenameListsJson(umtResources.GetPMXRenameListsJson());
         }
 
-        /// <summary>Deserializes rename lists from a JSON string.</summary>
+        /// <summary>
+        /// Deserializes rename lists from a JSON string.
+        /// </summary>
         /// <param name="json">Rename-list JSON.</param>
         /// <returns>The deserialized rename lists, or an empty instance when the JSON deserializes to null.</returns>
         /// <exception cref="ArgumentException">Thrown when <paramref name="json"/> is null or empty.</exception>
@@ -146,10 +159,11 @@ namespace UMT
             return JsonConvert.DeserializeObject<PMXRenameLists>(json) ?? new PMXRenameLists();
         }
 
-        /// <summary>Asynchronously deserializes rename lists from a JSON string.</summary>
+        /// <summary>
+        /// Asynchronously deserializes rename lists from a JSON string.
+        /// </summary>
         /// <remarks>
-        /// The parse itself is a single indivisible call; this yields once through <paramref name="frameBudget"/> before
-        /// it so the UI can repaint, and runs on the main thread (no worker offload) to stay safe on WebGL.
+        /// The parse itself is a single indivisible call; this yields once through <paramref name="frameBudget"/> before it so the UI can repaint, and runs on the main thread (no worker offload) to stay safe on WebGL.
         /// </remarks>
         /// <param name="frameBudget">Frame budget used to yield back to the main thread before parsing; may be null to run without yielding.</param>
         /// <param name="json">Rename-list JSON.</param>
@@ -237,9 +251,7 @@ namespace UMT
         /// ordered token replacements, romanization, ASCII normalization, and bone-name uniqueness.
         /// </summary>
         /// <remarks>
-        /// Runs entirely on the calling (main) thread and yields cooperatively through <paramref name="frameBudget"/>
-        /// rather than offloading to a worker thread, so it stays responsive  and functional  on single-threaded
-        /// platforms such as WebGL.
+        /// Runs entirely on the calling (main) thread and yields cooperatively through <paramref name="frameBudget"/> rather than offloading to a worker thread, so it stays responsive  and functional  on single-threaded platforms such as WebGL.
         /// </remarks>
         /// <param name="frameBudget">Frame budget used to yield back to the main thread between stages; may be null to run without yielding.</param>
         /// <param name="model">Model whose names are renamed in place.</param>
@@ -327,11 +339,7 @@ namespace UMT
             }
         }
 
-        private static string[] BuildRenamedNames(
-            IReadOnlyList<string> names,
-            IReadOnlyList<PMXRenameEntry> renameList,
-            UMTResources umtResources,
-            bool enforceUniqueNames)
+        private static string[] BuildRenamedNames(IReadOnlyList<string> names, IReadOnlyList<PMXRenameEntry> renameList, UMTResources umtResources, bool enforceUniqueNames)
         {
             if (names == null)
             {
@@ -426,18 +434,14 @@ namespace UMT
             {
                 int boneIndex = indices[orderIndex];
                 int parentBoneIndex = model.bones[boneIndex].parentBoneIndex;
-                string parentPath = parentBoneIndex >= 0 && parentBoneIndex < boneCount
-                    ? paths[parentBoneIndex]
-                    : string.Empty;
+                string parentPath = parentBoneIndex >= 0 && parentBoneIndex < boneCount ? paths[parentBoneIndex] : string.Empty;
                 string baseName = names[boneIndex];
                 string generatedName = string.IsNullOrEmpty(baseName) ? $"Bone_{boneIndex}" : baseName;
                 string path = BuildDAGPath(parentPath, generatedName);
 
                 if (!string.IsNullOrEmpty(baseName))
                 {
-                    generatedName = PMXUtilities.GetUniqueName(
-                        baseName,
-                        candidate => usedPaths.Contains(BuildDAGPath(parentPath, candidate)));
+                    generatedName = PMXUtilities.GetUniqueName(baseName, candidate => usedPaths.Contains(BuildDAGPath(parentPath, candidate)));
                     path = BuildDAGPath(parentPath, generatedName);
                     result[boneIndex] = generatedName;
                 }
@@ -471,9 +475,7 @@ namespace UMT
 
             states[boneIndex] = 1;
             int parentBoneIndex = model.bones[boneIndex].parentBoneIndex;
-            depths[boneIndex] = parentBoneIndex >= 0 && parentBoneIndex < model.bones.Length
-                ? ResolveBoneDepth(model, parentBoneIndex, depths, states) + 1
-                : 0;
+            depths[boneIndex] = parentBoneIndex >= 0 && parentBoneIndex < model.bones.Length ? ResolveBoneDepth(model, parentBoneIndex, depths, states) + 1 : 0;
             states[boneIndex] = 2;
             return depths[boneIndex];
         }
@@ -552,7 +554,9 @@ namespace UMT
             return renamed;
         }
 
-        /// <summary>Serializes a rename result's string map to indented JSON.</summary>
+        /// <summary>
+        /// Serializes a rename result's string map to indented JSON.
+        /// </summary>
         /// <param name="result">Rename result whose string map is serialized.</param>
         /// <returns>The indented JSON representation of the string map.</returns>
         public static string ToStringMapJson(PMXRenameResult result)
@@ -668,7 +672,9 @@ namespace UMT
             return string.IsNullOrWhiteSpace(pinyin) ? value : RemoveDiacritics(pinyin).Replace("|", string.Empty);
         }
 
-        /// <summary>Removes combining diacritic marks from a string, returning a recomposed result.</summary>
+        /// <summary>
+        /// Removes combining diacritic marks from a string, returning a recomposed result.
+        /// </summary>
         /// <param name="text">Text to strip of diacritics.</param>
         /// <returns>The text with non-spacing marks removed, or the input unchanged when null or whitespace.</returns>
         public static string RemoveDiacritics(string text)
@@ -746,35 +752,17 @@ namespace UMT
 
         private static bool IsJapaneseSpecificCodePoint(int codePoint)
         {
-            return IsCodePointInRange(codePoint, k_HiraganaStart, k_HiraganaEnd) ||
-                IsCodePointInRange(codePoint, k_KatakanaStart, k_KatakanaEnd) ||
-                IsCodePointInRange(codePoint, k_KatakanaPhoneticExtensionsStart, k_KatakanaPhoneticExtensionsEnd) ||
-                IsCodePointInRange(codePoint, k_KanaSupplementStart, k_KanaSupplementEnd) ||
-                IsCodePointInRange(codePoint, k_KanaExtendedAStart, k_KanaExtendedAEnd) ||
-                IsCodePointInRange(codePoint, k_SmallKanaExtensionStart, k_SmallKanaExtensionEnd) ||
-                IsCodePointInRange(codePoint, k_HalfwidthKatakanaStart, k_HalfwidthKatakanaEnd);
+            return IsCodePointInRange(codePoint, k_HiraganaStart, k_HiraganaEnd) || IsCodePointInRange(codePoint, k_KatakanaStart, k_KatakanaEnd) || IsCodePointInRange(codePoint, k_KatakanaPhoneticExtensionsStart, k_KatakanaPhoneticExtensionsEnd) || IsCodePointInRange(codePoint, k_KanaSupplementStart, k_KanaSupplementEnd) || IsCodePointInRange(codePoint, k_KanaExtendedAStart, k_KanaExtendedAEnd) || IsCodePointInRange(codePoint, k_SmallKanaExtensionStart, k_SmallKanaExtensionEnd) || IsCodePointInRange(codePoint, k_HalfwidthKatakanaStart, k_HalfwidthKatakanaEnd);
         }
 
         private static bool IsKoreanCodePoint(int codePoint)
         {
-            return IsCodePointInRange(codePoint, k_HangulJamoStart, k_HangulJamoEnd) ||
-                IsCodePointInRange(codePoint, k_HangulCompatibilityJamoStart, k_HangulCompatibilityJamoEnd) ||
-                IsCodePointInRange(codePoint, k_HangulJamoExtendedAStart, k_HangulJamoExtendedAEnd) ||
-                IsCodePointInRange(codePoint, k_HangulSyllablesStart, k_HangulSyllablesEnd) ||
-                IsCodePointInRange(codePoint, k_HangulJamoExtendedBStart, k_HangulJamoExtendedBEnd);
+            return IsCodePointInRange(codePoint, k_HangulJamoStart, k_HangulJamoEnd) || IsCodePointInRange(codePoint, k_HangulCompatibilityJamoStart, k_HangulCompatibilityJamoEnd) || IsCodePointInRange(codePoint, k_HangulJamoExtendedAStart, k_HangulJamoExtendedAEnd) || IsCodePointInRange(codePoint, k_HangulSyllablesStart, k_HangulSyllablesEnd) || IsCodePointInRange(codePoint, k_HangulJamoExtendedBStart, k_HangulJamoExtendedBEnd);
         }
 
         private static bool IsCJKCodePoint(int codePoint)
         {
-            return IsCodePointInRange(codePoint, k_CJKUnifiedIdeographsExtensionAStart, k_CJKUnifiedIdeographsExtensionAEnd) ||
-                IsCodePointInRange(codePoint, k_CJKUnifiedIdeographsStart, k_CJKUnifiedIdeographsEnd) ||
-                IsCodePointInRange(codePoint, k_CJKCompatibilityIdeographsStart, k_CJKCompatibilityIdeographsEnd) ||
-                IsCodePointInRange(codePoint, k_CJKUnifiedIdeographsExtensionBStart, k_CJKUnifiedIdeographsExtensionBEnd) ||
-                IsCodePointInRange(codePoint, k_CJKUnifiedIdeographsExtensionCStart, k_CJKUnifiedIdeographsExtensionCEnd) ||
-                IsCodePointInRange(codePoint, k_CJKUnifiedIdeographsExtensionDStart, k_CJKUnifiedIdeographsExtensionDEnd) ||
-                IsCodePointInRange(codePoint, k_CJKUnifiedIdeographsExtensionEStart, k_CJKUnifiedIdeographsExtensionEEnd) ||
-                IsCodePointInRange(codePoint, k_CJKUnifiedIdeographsExtensionFStart, k_CJKUnifiedIdeographsExtensionFEnd) ||
-                IsCodePointInRange(codePoint, k_CJKCompatibilityIdeographsSupplementStart, k_CJKCompatibilityIdeographsSupplementEnd);
+            return IsCodePointInRange(codePoint, k_CJKUnifiedIdeographsExtensionAStart, k_CJKUnifiedIdeographsExtensionAEnd) || IsCodePointInRange(codePoint, k_CJKUnifiedIdeographsStart, k_CJKUnifiedIdeographsEnd) || IsCodePointInRange(codePoint, k_CJKCompatibilityIdeographsStart, k_CJKCompatibilityIdeographsEnd) || IsCodePointInRange(codePoint, k_CJKUnifiedIdeographsExtensionBStart, k_CJKUnifiedIdeographsExtensionBEnd) || IsCodePointInRange(codePoint, k_CJKUnifiedIdeographsExtensionCStart, k_CJKUnifiedIdeographsExtensionCEnd) || IsCodePointInRange(codePoint, k_CJKUnifiedIdeographsExtensionDStart, k_CJKUnifiedIdeographsExtensionDEnd) || IsCodePointInRange(codePoint, k_CJKUnifiedIdeographsExtensionEStart, k_CJKUnifiedIdeographsExtensionEEnd) || IsCodePointInRange(codePoint, k_CJKUnifiedIdeographsExtensionFStart, k_CJKUnifiedIdeographsExtensionFEnd) || IsCodePointInRange(codePoint, k_CJKCompatibilityIdeographsSupplementStart, k_CJKCompatibilityIdeographsSupplementEnd);
         }
 
         private static bool IsCodePointInRange(int codePoint, int start, int end)

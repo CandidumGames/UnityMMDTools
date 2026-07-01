@@ -3,10 +3,14 @@ using UnityEngine;
 
 namespace UMT
 {
-    /// <summary>Creates <see cref="SkinnedMeshRenderer"/> child objects for the imported meshes under the model root.</summary>
+    /// <summary>
+    /// Creates <see cref="SkinnedMeshRenderer"/> child objects for the imported meshes under the model root.
+    /// </summary>
     public static class PMXRendererBuilder
     {
-        /// <summary>Builds a skinned renderer per imported mesh, wiring materials, bones, and the root bone.</summary>
+        /// <summary>
+        /// Builds a skinned renderer per imported mesh, wiring materials, bones, and the root bone.
+        /// </summary>
         /// <param name="model">PMX model used to locate the top-level bone.</param>
         /// <param name="root">Root object the renderer children are parented to.</param>
         /// <param name="meshes">Imported meshes to create renderers for.</param>
@@ -22,6 +26,7 @@ namespace UMT
                 child.transform.SetParent(root.transform, false);
 
                 SkinnedMeshRenderer renderer = child.AddComponent<SkinnedMeshRenderer>();
+                importedMesh.renderer = renderer;
                 renderer.sharedMesh = importedMesh.mesh;
                 Material[] sharedMaterials = new Material[importedMesh.materialIndices.Length];
                 for (int i = 0; i < importedMesh.materialIndices.Length; ++i)

@@ -14,21 +14,20 @@ using UnityEngine.Rendering;
 namespace UMT
 {
     /// <summary>
-    /// Builds Unity materials from PMX materials, assigning textures by index, detecting alpha coverage for
-    /// transparency, and configuring lilToon, URP Unlit, or built-in Unlit shaders in that preference order.
+    /// Builds Unity materials from PMX materials, assigning textures by index, detecting alpha coverage for transparency, and configuring lilToon, URP Unlit, or built-in Unlit shaders in that preference order.
     /// </summary>
     public static class PMXMaterialBuilder
     {
         private const string k_LilToonMultiShaderName = "_lil/lilToonMulti";
-        // lilToon's "Multi" shader has no outline pass; the outline pass only exists in the separate
-        // outline variant. lilToon itself swaps to this shader when _UseOutline is enabled.
+        // lilToon's "Multi" shader has no outline pass; the outline pass only exists in the separate outline variant. lilToon itself swaps to this shader when _UseOutline is enabled.
         private const string k_LilToonMultiOutlineShaderName = "Hidden/lilToonMultiOutline";
         private const string k_URPUnlitFallbackShaderName = "Universal Render Pipeline/Unlit";
         private const string k_BuiltInUnlitShaderName = "Unlit/Texture";
         private const string k_BuiltInUnlitTransparentShaderName = "Unlit/Transparent";
 
         private static readonly int s_BaseColorProperty = Shader.PropertyToID("_Color");
-        private static readonly int s_BaseTextureProperty = Shader.PropertyToID("_MainTex");
+        private static readonly int s_BaseMapProperty = Shader.PropertyToID("_BaseMap");
+        private static readonly int s_MainTextureProperty = Shader.PropertyToID("_MainTex");
         private static readonly int s_ShadowColorProperty = Shader.PropertyToID("_ShadowColor");
         private static readonly int s_ShadowReceiveProperty = Shader.PropertyToID("_ShadowReceive");
         private static readonly int s_ShadowBorderProperty = Shader.PropertyToID("_ShadowBorder");
@@ -71,14 +70,14 @@ namespace UMT
         private const string k_LilToonRequireUV2Keyword = "_REQUIRE_UV2";
         private const string k_UnityUIClipRectKeyword = "UNITY_UI_CLIP_RECT";
 
-        // Final outline thickness in Unity meters per unit of PMX edge size. ~0.03 PMX units scaled by
-        // the MMD-to-Unity unit factor (0.08) lands near this value, giving an MMD-like thin edge.
+        // Final outline thickness in Unity meters per unit of PMX edge size. ~0.03 PMX units scaled by the MMD-to-Unity unit factor (0.08) lands near this value, giving an MMD-like thin edge.
         private const float k_OutlineWidthScale = 0.0025f;
-        // lilToon multiplies _OutlineWidth by 0.01 internally (see lilGetOutlineWidth), so the slider unit
-        // is 1.0 == 1cm of object-space displacement. Convert our meter width back into that slider unit.
+        // lilToon multiplies _OutlineWidth by 0.01 internally (see lilGetOutlineWidth), so the slider unit is 1.0 == 1cm of object-space displacement. Convert our meter width back into that slider unit.
         private const float k_LilToonOutlineWidthUnit = 0.01f;
 
-        /// <summary>Builds one Unity material per PMX material, resolving textures and transparency.</summary>
+        /// <summary>
+        /// Builds one Unity material per PMX material, resolving textures and transparency.
+        /// </summary>
         /// <param name="model">PMX model providing material definitions.</param>
         /// <param name="options">Import options providing alpha-detection shaders and thresholds.</param>
         /// <param name="modelName">Model name (used for context; not embedded in material names).</param>
@@ -87,9 +86,7 @@ namespace UMT
         public static List<Material> Build(PMXModel model, PMXImportOptions options, string modelName, Texture2D[] texturesByIndex)
         {
             List<Material> materials = new List<Material>(model.materials.Length);
-            // The imported texture assets in texturesByIndex may be compressed and/or non-readable (editor
-            // import settings), which corrupts CPU alpha sampling. Decode the original source files into raw
-            // Color32 pixels instead, cached per resolved path for the duration of this build.
+            // The imported texture assets in texturesByIndex may be compressed and/or non-readable (editor import settings), which corrupts CPU alpha sampling. Decode the original source files into raw Color32 pixels instead, cached per resolved path for the duration of this build.
             SourcePixelCache sourcePixels = new SourcePixelCache(model, options);
             int indicesOffset = 0;
             for (int i = 0; i < model.materials.Length; ++i)
@@ -104,25 +101,19 @@ namespace UMT
                 string renamedName = pmxMaterial.renamedName.ToString();
                 string materialName = PMXUtilities.SanitizeFileName(renamedName, i);
 
-                if (options.materialOverrides != null
-                    && options.materialOverrides.TryGetValue(materialName, out Material overrideMaterial)
-                    && overrideMaterial != null)
+                if (options.materialOverrides != null && options.materialOverrides.TryGetValue(materialName, out Material overrideMaterial) && overrideMaterial != null)
                 {
                     materials.Add(overrideMaterial);
                     continue;
                 }
 
                 SourcePixels mainPixels = sourcePixels.Get(pmxMaterial.textureIndex);
-                (bool isBelowAlphaCoverageThreshold, float alphaCoverage, bool anyPixelOpaque) alphaDetection = DetectAlphaCoverage(
-                        mainPixels,
-                        model,
-                        faceIndexStart,
-                        faceIndexCount,
-                        options.alphaDetectionThreshold);
+                (bool isBelowAlphaCoverageThreshold, float alphaCoverage, bool anyPixelOpaque) alphaDetection = DetectAlphaCoverage(mainPixels, model, faceIndexStart, faceIndexCount, options.alphaDetectionThreshold);
                 bool shouldBeTransparent = alphaDetection.isBelowAlphaCoverageThreshold || pmxMaterial.diffuse.a < 1.0f;
                 float alphaCoverage = Mathf.Min(alphaDetection.alphaCoverage, pmxMaterial.diffuse.a);
                 bool anyPixelOpaque = alphaDetection.anyPixelOpaque && !(pmxMaterial.diffuse.a < 1.0f);
                 bool transparentWithZWrite = anyPixelOpaque || alphaCoverage >= options.alphaCoverageZWriteThreshold;
+                Debug.Log(materialName + " alpha coverage: " + alphaCoverage.ToString("F3") + ", any opaque: " + anyPixelOpaque + ", transparent with ZWrite: " + transparentWithZWrite);
                 Material material = BuildMaterial(pmxMaterial, mainTexture, sphereTexture, materialName, shouldBeTransparent, transparentWithZWrite);
 
                 material.renderQueue = shouldBeTransparent ? 3000 + i : 2500 + i;
@@ -177,11 +168,7 @@ namespace UMT
         private static void ConfigureLilToonShading(Material material, PMXMaterial pmxMaterial, Texture2D mainTexture, Texture2D sphereTexture, bool isDoubleSided, bool drawsEdge)
         {
             Color ambientColor = new Color(pmxMaterial.ambient.x, pmxMaterial.ambient.y, pmxMaterial.ambient.z, 1.0f);
-            Color borderColor = new Color(
-                (pmxMaterial.diffuse.r + pmxMaterial.ambient.x) * 0.5f,
-                (pmxMaterial.diffuse.g + pmxMaterial.ambient.y) * 0.5f,
-                (pmxMaterial.diffuse.b + pmxMaterial.ambient.z) * 0.5f,
-                1.0f);
+            Color borderColor = new Color((pmxMaterial.diffuse.r + pmxMaterial.ambient.x) * 0.5f, (pmxMaterial.diffuse.g + pmxMaterial.ambient.y) * 0.5f, (pmxMaterial.diffuse.b + pmxMaterial.ambient.z) * 0.5f, 1.0f);
             bool isEyeMaterial = IsEyeMaterial(pmxMaterial);
             bool isFaceMaterial = IsFaceMaterial(pmxMaterial);
             SetColorIfPresent(material, s_ShadowColorProperty, ambientColor);
@@ -223,9 +210,7 @@ namespace UMT
 
             SetFloatIfPresent(material, s_DoubleSidedProperty, isDoubleSided ? 1.0f : 0.0f);
 
-            // The outline pass itself lives in the outline shader variant (selected in GetShader). These
-            // properties only take effect when that variant is assigned. _UseOutline keeps lilToon's own
-            // editor swap logic consistent if the material is later re-set up.
+            // The outline pass itself lives in the outline shader variant (selected in GetShader). These properties only take effect when that variant is assigned. _UseOutline keeps lilToon's own editor swap logic consistent if the material is later re-set up.
             SetFloatIfPresent(material, s_UseOutlineProperty, drawsEdge ? 1.0f : 0.0f);
             SetFloatIfPresent(material, s_OutlineWidthProperty, drawsEdge ? pmxMaterial.edgeSize * k_OutlineWidthScale / k_LilToonOutlineWidthUnit : 0.0f);
             SetColorIfPresent(material, s_OutlineColorProperty, pmxMaterial.edgeColor);
@@ -258,19 +243,25 @@ namespace UMT
 
         private static void ConfigureURPTransparent(Material material, bool transparentWithZWrite)
         {
+            if (transparentWithZWrite)
+            {
+                return;
+            }
             SetFloatIfPresent(material, s_URPSurfaceProperty, 1.0f);
             SetFloatIfPresent(material, s_URPBlendProperty, 0.0f);
             SetFloatIfPresent(material, s_URPSrcBlendProperty, (float)BlendMode.SrcAlpha);
             SetFloatIfPresent(material, s_URPDstBlendProperty, (float)BlendMode.OneMinusSrcAlpha);
-            SetFloatIfPresent(material, s_URPZWriteProperty, transparentWithZWrite ? 1.0f : 0.0f);
             material.SetOverrideTag("RenderType", "Transparent");
             SetKeywordIfPresent(material, k_URPSurfaceTypeTransparentKeyword, true);
         }
 
         private static void ConfigureBuiltInTransparent(Material material, bool transparentWithZWrite)
         {
-            // Built-in uses a dedicated Unlit/Transparent shader, so blending is already
-            // baked into the shader; only the render order needs to be set explicitly.
+            if (transparentWithZWrite)
+            {
+                return;
+            }
+            // Built-in uses a dedicated Unlit/Transparent shader, so blending is already baked into the shader; only the render order needs to be set explicitly.
             material.SetOverrideTag("RenderType", "Transparent");
         }
 
@@ -282,7 +273,7 @@ namespace UMT
         private static Material BuildMaterial(PMXMaterial pmxMaterial, Texture2D mainTexture, Texture2D sphereTexture, string materialName, bool transparent, bool transparentWithZWrite)
         {
             bool drawsEdge = (pmxMaterial.drawingFlags & PMXMaterial.DrawingFlags.DrawEdge) != 0 && !transparent;
-            Shader shader = GetShader(transparent, drawsEdge, out ShaderKind shaderKind);
+            Shader shader = GetShader(transparent, transparentWithZWrite, drawsEdge, out ShaderKind shaderKind);
             if (shader == null)
             {
                 Debug.LogError("No compatible PMX material shader was found.");
@@ -298,7 +289,8 @@ namespace UMT
             SetColorIfPresent(material, s_BaseColorProperty, pmxMaterial.diffuse);
             if (mainTexture != null)
             {
-                SetTextureIfPresent(material, s_BaseTextureProperty, mainTexture);
+                SetTextureIfPresent(material, s_MainTextureProperty, mainTexture);
+                SetTextureIfPresent(material, s_BaseMapProperty, mainTexture);
             }
 
             bool isDoubleSided = (pmxMaterial.drawingFlags & PMXMaterial.DrawingFlags.DoubleSided) != 0;
@@ -335,10 +327,9 @@ namespace UMT
             BuiltIn,
         }
 
-        private static Shader GetShader(bool transparent, bool drawsEdge, out ShaderKind shaderKind)
+        private static Shader GetShader(bool transparent, bool transparentWithZWrite, bool drawsEdge, out ShaderKind shaderKind)
         {
-            // Edge-drawing materials need the outline-capable lilToon variant; the plain Multi shader has no
-            // outline pass. URP/built-in fallbacks have no outline support, so edges are dropped there.
+            // Edge-drawing materials need the outline-capable lilToon variant; the plain Multi shader has no outline pass. URP/built-in fallbacks have no outline support, so edges are dropped there.
             Shader lilToonShader = Shader.Find(drawsEdge ? k_LilToonMultiOutlineShaderName : k_LilToonMultiShaderName);
             if (lilToonShader != null)
             {
@@ -354,7 +345,7 @@ namespace UMT
             }
 
             shaderKind = ShaderKind.BuiltIn;
-            return Shader.Find(transparent ? k_BuiltInUnlitTransparentShaderName : k_BuiltInUnlitShaderName);
+            return Shader.Find(transparent && !transparentWithZWrite ? k_BuiltInUnlitTransparentShaderName : k_BuiltInUnlitShaderName);
         }
 
         private static void SetColorIfPresent(Material material, int property, Color value)
@@ -397,27 +388,17 @@ namespace UMT
         private const int k_ResultCount = 3;
 
         /// <summary>
-        /// Measures the alpha coverage of a material's texture over its UV footprint on the CPU, sampling the
-        /// raw source pixels at every vertex UV and every triangle centroid (center of gravity) with a
-        /// Burst-compiled parallel job, to decide whether the material should be rendered as transparent.
+        /// Measures the alpha coverage of a material's texture over its UV footprint on the CPU, sampling the raw source pixels at every vertex UV and every triangle centroid (center of gravity) with a Burst-compiled parallel job, to decide whether the material should be rendered as transparent.
         /// </summary>
         /// <param name="sourcePixels">Decoded source-file pixels; an invalid value is treated as fully opaque white.</param>
         /// <param name="model">PMX model providing vertices, UVs, and triangle indices.</param>
         /// <param name="faceIndexStart">Start offset into <see cref="PMXModel.indices"/> for this material.</param>
         /// <param name="faceIndexCount">Number of indices this material consumes (a multiple of three).</param>
         /// <param name="alphaThreshold">Coverage value below which the material is considered transparent.</param>
-        /// <returns>
-        /// A tuple of whether coverage is below the threshold, the measured average coverage, and whether
-        /// any sampled pixel was fully opaque.
-        /// </returns>
+        /// <returns>A tuple of whether coverage is below the threshold, the measured average coverage, and whether any sampled pixel was fully opaque.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the model is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when the index range is invalid.</exception>
-        public static (bool isBelowAlphaCoverageThreshold, float alphaCoverage, bool anyPixelOpaque) DetectAlphaCoverage(
-            SourcePixels sourcePixels,
-            PMXModel model,
-            int faceIndexStart,
-            int faceIndexCount,
-            float alphaThreshold)
+        public static (bool isBelowAlphaCoverageThreshold, float alphaCoverage, bool anyPixelOpaque) DetectAlphaCoverage(SourcePixels sourcePixels, PMXModel model, int faceIndexStart, int faceIndexCount, float alphaThreshold)
         {
             if (model == null)
             {
@@ -429,15 +410,13 @@ namespace UMT
             }
 
             int triangleCount = faceIndexCount / 3;
-            // A material with no geometry contributes no samples; treat it as fully opaque so it is never
-            // forced transparent, exactly as the GPU path's empty-footprint readback did.
+            // A material with no geometry contributes no samples; treat it as fully opaque so it is never forced transparent, exactly as the GPU path's empty-footprint readback did.
             if (triangleCount == 0)
             {
                 return (false, 1.0f, true);
             }
 
-            // Compact this material's geometry: a UV per referenced vertex and re-based triangle indices,
-            // so the job can sample uv[i] for i < vertexCount and compute centroids for the rest on the fly.
+            // Compact this material's geometry: a UV per referenced vertex and re-based triangle indices, so the job can sample uv[i] for i < vertexCount and compute centroids for the rest on the fly.
             Dictionary<uint, int> remappedVertices = new Dictionary<uint, int>(faceIndexCount);
             NativeArray<float2> uvs = new NativeArray<float2>(faceIndexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             NativeArray<int> indices = new NativeArray<int>(faceIndexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -454,12 +433,9 @@ namespace UMT
                 indices[index] = remapped;
             }
 
-            // The job's [ReadOnly] NativeArray field must always be assigned for the job-safety system, even
-            // when there is no texture; a one-element placeholder stands in and is ignored via hasTexture.
+            // The job's [ReadOnly] NativeArray field must always be assigned for the job-safety system, even when there is no texture; a one-element placeholder stands in and is ignored via hasTexture.
             bool hasTexture = sourcePixels.IsValid;
-            NativeArray<Color32> pixels = hasTexture
-                ? new NativeArray<Color32>(sourcePixels.pixels, Allocator.TempJob)
-                : new NativeArray<Color32>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<Color32> pixels = hasTexture ? new NativeArray<Color32>(sourcePixels.pixels, Allocator.TempJob) : new NativeArray<Color32>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 
             NativeArray<int> result = new NativeArray<int>(k_ResultCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 
@@ -477,9 +453,7 @@ namespace UMT
             job.Schedule(vertexCount + triangleCount, 64).Complete();
 
             int coveredSamples = result[k_ResultCoveredCount];
-            float alphaCoverage = coveredSamples > 0
-                ? result[k_ResultAlphaSum] / (coveredSamples * k_AlphaCoverageScale)
-                : 1.0f;
+            float alphaCoverage = coveredSamples > 0 ? result[k_ResultAlphaSum] / (coveredSamples * k_AlphaCoverageScale) : 1.0f;
             bool isBelowAlphaCoverageThreshold = alphaCoverage < alphaThreshold;
             bool anyPixelOpaque = result[k_ResultAnyOpaque] != 0;
 
@@ -491,7 +465,9 @@ namespace UMT
             return (isBelowAlphaCoverageThreshold, alphaCoverage, anyPixelOpaque);
         }
 
-        /// <summary>Decoded source-file pixels for one texture: a tightly-packed bottom-up <see cref="Color32"/> grid.</summary>
+        /// <summary>
+        /// Decoded source-file pixels for one texture: a tightly-packed bottom-up <see cref="Color32"/> grid.
+        /// </summary>
         public readonly struct SourcePixels
         {
             /// <summary>Bottom-up, row-major RGBA pixels; <c>null</c> when no source texture was decoded.</summary>
@@ -506,16 +482,14 @@ namespace UMT
                 this.height = height;
             }
 
-            /// <summary>True when the pixel grid is present and matches its dimensions.</summary>
+            /// <summary>
+            /// True when the pixel grid is present and matches its dimensions.
+            /// </summary>
             public bool IsValid => pixels != null && width > 0 && height > 0 && pixels.Length >= width * height;
         }
 
         /// <summary>
-        /// Decodes a PMX model's texture files into raw <see cref="SourcePixels"/> on demand, caching each
-        /// resolved file so it is decoded only once per build. Decoding reads the original source bytes rather
-        /// than the imported texture asset, so it is unaffected by editor compression or read/write settings.
-        /// BMP and TGA are decoded straight to <see cref="Color32"/> arrays; other formats go through a
-        /// throwaway in-memory decode that never produces a compressed asset.
+        /// Decodes a PMX model's texture files into raw <see cref="SourcePixels"/> on demand, caching each resolved file so it is decoded only once per build. Decoding reads the original source bytes rather than the imported texture asset, so it is unaffected by editor compression or read/write settings. BMP and TGA are decoded straight to <see cref="Color32"/> arrays; other formats go through a throwaway in-memory decode that never produces a compressed asset.
         /// </summary>
         private sealed class SourcePixelCache
         {
@@ -526,12 +500,12 @@ namespace UMT
             public SourcePixelCache(PMXModel model, PMXImportOptions options)
             {
                 m_Model = model;
-                m_BaseDirectory = !string.IsNullOrEmpty(options.textureBaseDirectory)
-                    ? options.textureBaseDirectory
-                    : Path.GetDirectoryName(options.sourcePath);
+                m_BaseDirectory = !string.IsNullOrEmpty(options.textureBaseDirectory) ? options.textureBaseDirectory : Path.GetDirectoryName(options.sourcePath);
             }
 
-            /// <summary>Returns the decoded pixels for a texture index, or an invalid value when unavailable.</summary>
+            /// <summary>
+            /// Returns the decoded pixels for a texture index, or an invalid value when unavailable.
+            /// </summary>
             public SourcePixels Get(int textureIndex)
             {
                 if (textureIndex < 0 || textureIndex >= m_Model.texturePaths.Length)
@@ -571,9 +545,7 @@ namespace UMT
                     BMPImage bmp = new BMPLoader().LoadBMP(bytes);
                     int bmpWidth = bmp.info.absWidth;
                     int bmpHeight = bmp.info.absHeight;
-                    // BMPImage.imageData is already bottom-up for positive heights; a negative height means the
-                    // rows are stored top-down, so flip to the bottom-up order the sampler expects (this
-                    // mirrors what BMPImage.ToTexture2D does before SetPixels32).
+                    // BMPImage.imageData is already bottom-up for positive heights; a negative height means the rows are stored top-down, so flip to the bottom-up order the sampler expects (this mirrors what BMPImage.ToTexture2D does before SetPixels32).
                     if (bmp.info.height < 0)
                     {
                         FlipRowsInPlace(bmp.imageData, bmpWidth, bmpHeight);
@@ -581,8 +553,7 @@ namespace UMT
                     return new SourcePixels(bmp.imageData, bmpWidth, bmpHeight);
                 }
 
-                // PNG/JPG: decode through a throwaway in-memory texture. LoadImage produces uncompressed,
-                // readable RGBA32 pixels independent of any imported asset's compression settings.
+                // PNG/JPG: decode through a throwaway in-memory texture. LoadImage produces uncompressed, readable RGBA32 pixels independent of any imported asset's compression settings.
                 Texture2D temporary = new Texture2D(2, 2, TextureFormat.RGBA32, false);
                 ImageConversion.LoadImage(temporary, bytes);
                 SourcePixels decoded = new SourcePixels(temporary.GetPixels32(), temporary.width, temporary.height);
@@ -592,9 +563,7 @@ namespace UMT
 
             private string ResolvePath(string texturePath)
             {
-                if (string.IsNullOrWhiteSpace(texturePath)
-                    || string.IsNullOrEmpty(m_BaseDirectory)
-                    || !Directory.Exists(m_BaseDirectory))
+                if (string.IsNullOrWhiteSpace(texturePath) || string.IsNullOrEmpty(m_BaseDirectory) || !Directory.Exists(m_BaseDirectory))
                 {
                     return null;
                 }
@@ -628,7 +597,9 @@ namespace UMT
                 return null;
             }
 
-            /// <summary>Reverses the row order of a row-major pixel grid in place (top-down to bottom-up).</summary>
+            /// <summary>
+            /// Reverses the row order of a row-major pixel grid in place (top-down to bottom-up).
+            /// </summary>
             private static void FlipRowsInPlace(Color32[] pixels, int width, int height)
             {
                 for (int y = 0; y < height / 2; ++y)
@@ -644,10 +615,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Burst-compiled parallel job that point-samples a material's texture once per work item: vertex UVs
-        /// for items below <see cref="vertexCount"/>, and triangle centroids (computed on the fly from
-        /// <see cref="indices"/>) for the rest. Each worker accumulates into the shared <see cref="result"/>
-        /// array atomically.
+        /// Burst-compiled parallel job that point-samples a material's texture once per work item: vertex UVs for items below <see cref="vertexCount"/>, and triangle centroids (computed on the fly from <see cref="indices"/>) for the rest. Each worker accumulates into the shared <see cref="result"/> array atomically.
         /// </summary>
         [BurstCompile]
         private unsafe struct DetectAlphaJob : IJobParallelFor
@@ -659,8 +627,7 @@ namespace UMT
             public int textureWidth;
             public int textureHeight;
             public bool hasTexture;
-            // Shared across all work items; every write is an atomic Interlocked accumulation, so the
-            // parallel-for aliasing restriction is intentionally disabled.
+            // Shared across all work items; every write is an atomic Interlocked accumulation, so the parallel-for aliasing restriction is intentionally disabled.
             [NativeDisableParallelForRestriction] public NativeArray<int> result;
 
             public void Execute(int workItem)
@@ -679,9 +646,7 @@ namespace UMT
 
                 byte alpha = SampleAlpha(uv);
 
-                // Every sample counts toward coverage so alpha-0 texels drag the average down, matching the
-                // GPU pass which averaged alpha over the whole rasterized footprint (its green-channel mask
-                // marked every covered texel, not just the non-transparent ones).
+                // Every sample counts toward coverage so alpha-0 texels drag the average down, matching the GPU pass which averaged alpha over the whole rasterized footprint (its green-channel mask marked every covered texel, not just the non-transparent ones).
                 int* basePointer = (int*)result.GetUnsafePtr();
                 Interlocked.Increment(ref basePointer[k_ResultCoveredCount]);
                 Interlocked.Add(ref basePointer[k_ResultAlphaSum], alpha);
@@ -692,8 +657,7 @@ namespace UMT
             }
 
             /// <summary>
-            /// Point-samples the texture alpha at the given UV. An absent texture is treated as fully opaque
-            /// white, matching the GPU pass's white-texture fallback.
+            /// Point-samples the texture alpha at the given UV. An absent texture is treated as fully opaque white, matching the GPU pass's white-texture fallback.
             /// </summary>
             private byte SampleAlpha(float2 uv)
             {
@@ -702,8 +666,7 @@ namespace UMT
                     return 255;
                 }
 
-                // The source pixels are bottom-up (row 0 = bottom), so flip V to map PMX UV space onto them,
-                // and wrap so tiled UVs sample within bounds.
+                // The source pixels are bottom-up (row 0 = bottom), so flip V to map PMX UV space onto them, and wrap so tiled UVs sample within bounds.
                 float u = uv.x - math.floor(uv.x);
                 float v = 1.0f - uv.y;
                 v -= math.floor(v);

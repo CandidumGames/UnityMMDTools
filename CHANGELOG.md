@@ -5,6 +5,17 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-07-02
+
+### Added
+
+- SDEF skinning. SDEF vertices are now deformed on the GPU via the new `MMDSDEFSkinner` component and its compute shader instead of being approximated as BDEF2. Each affected `SkinnedMeshRenderer` runs a per-frame compute pass that applies vertex-morph blend shapes and bone skinning (linear blend for BDEF vertices, the SDEF formula for SDEF vertices) into the renderer's output vertex buffer, driven by the owning `MMDTransformManager` after the bone solve.
+
+### Changed
+
+- Async load/bake APIs now return `System.Threading.Tasks.Task<T>` instead of Unity `Awaitable<T>` for Unity 2022.x compatibility. Affects `PMXReader.ReadAsync`, `PMXImporter.BuildUnityObjectsAsync`, `VMDReader.ReadAsync`, `VMDAnimationClipConverter.ConvertAsync`/`ConvertCameraAsync`, and `PMXAnimationPathBuilder.BuildAsync`.
+- Lowered the `com.unity.ugui` dependency from `2.0.0` to `1.0.0` to broaden Unity 2022.x compatibility.
+
 ## [0.2.1] - 2026-06-30
 
 ### Changed

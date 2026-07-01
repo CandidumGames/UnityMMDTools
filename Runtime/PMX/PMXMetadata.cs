@@ -6,33 +6,54 @@ using System.Collections.Generic;
 namespace UMT
 {
     /// <summary>
-    /// Summary metadata DTO built from a parsed <see cref="PMXModel"/> and serializable to JSON.
-    /// Captures header, model info, counts, and per-element summaries for diagnostics and import logs.
+    /// Summary metadata DTO built from a parsed <see cref="PMXModel"/> and serializable to JSON. Captures header, model info, counts, and per-element summaries for diagnostics and import logs.
     /// </summary>
     public sealed class PMXMetadata
     {
-        /// <summary>PMX file header copied from the source model.</summary>
+        /// <summary>
+        /// PMX file header copied from the source model.
+        /// </summary>
         public PMXHeader header { get; set; }
-        /// <summary>Model information copied from the source model.</summary>
+        /// <summary>
+        /// Model information copied from the source model.
+        /// </summary>
         public PMXModelInfo modelInfo { get; set; }
-        /// <summary>Element counts (vertices, faces, materials, bones, and so on).</summary>
+        /// <summary>
+        /// Element counts (vertices, faces, materials, bones, and so on).
+        /// </summary>
         public PMXMetadataCounts counts { get; set; }
-        /// <summary>Texture file paths referenced by the model.</summary>
+        /// <summary>
+        /// Texture file paths referenced by the model.
+        /// </summary>
         public List<string> textures { get; set; }
-        /// <summary>Per-material metadata summaries.</summary>
+        /// <summary>
+        /// Per-material metadata summaries.
+        /// </summary>
         public List<PMXMaterialMetadata> materials { get; set; }
-        /// <summary>Per-bone metadata summaries.</summary>
+        /// <summary>
+        /// Per-bone metadata summaries.
+        /// </summary>
         public List<PMXBoneMetadata> bones { get; set; }
-        /// <summary>Per-morph metadata summaries.</summary>
+        /// <summary>
+        /// Per-morph metadata summaries.
+        /// </summary>
         public List<PMXMorphMetadata> morphs { get; set; }
-        /// <summary>Per-display-frame metadata summaries.</summary>
+        /// <summary>
+        /// Per-display-frame metadata summaries.
+        /// </summary>
         public List<PMXDisplayFrameMetadata> displayFrames { get; set; }
-        /// <summary>Per-rigid-body metadata summaries.</summary>
+        /// <summary>
+        /// Per-rigid-body metadata summaries.
+        /// </summary>
         public List<PMXRigidBodyMetadata> rigidBodies { get; set; }
-        /// <summary>Per-joint metadata summaries.</summary>
+        /// <summary>
+        /// Per-joint metadata summaries.
+        /// </summary>
         public List<PMXJointMetadata> joints { get; set; }
 
-        /// <summary>Builds the metadata DTO from a parsed PMX model.</summary>
+        /// <summary>
+        /// Builds the metadata DTO from a parsed PMX model.
+        /// </summary>
         /// <param name="model">Parsed PMX model to summarize.</param>
         public PMXMetadata(PMXModel model)
         {
@@ -156,7 +177,9 @@ namespace UMT
             }
         }
 
-        /// <summary>Serializes this metadata to indented JSON, writing enum values as their names.</summary>
+        /// <summary>
+        /// Serializes this metadata to indented JSON, writing enum values as their names.
+        /// </summary>
         /// <returns>The indented JSON representation of this metadata.</returns>
         public string ToJson()
         {
@@ -167,144 +190,264 @@ namespace UMT
         }
     }
 
-    /// <summary>Element counts summarizing the size of a parsed PMX model.</summary>
+    /// <summary>
+    /// Element counts summarizing the size of a parsed PMX model.
+    /// </summary>
     public sealed class PMXMetadataCounts
     {
-        /// <summary>Number of vertices.</summary>
+        /// <summary>
+        /// Number of vertices.
+        /// </summary>
         public int vertices { get; set; }
-        /// <summary>Number of face indices.</summary>
+        /// <summary>
+        /// Number of face indices.
+        /// </summary>
         public int faceIndices { get; set; }
-        /// <summary>Number of triangles (face indices divided by three).</summary>
+        /// <summary>
+        /// Number of triangles (face indices divided by three).
+        /// </summary>
         public int triangles { get; set; }
-        /// <summary>Number of texture paths.</summary>
+        /// <summary>
+        /// Number of texture paths.
+        /// </summary>
         public int textures { get; set; }
-        /// <summary>Number of materials.</summary>
+        /// <summary>
+        /// Number of materials.
+        /// </summary>
         public int materials { get; set; }
-        /// <summary>Number of bones.</summary>
+        /// <summary>
+        /// Number of bones.
+        /// </summary>
         public int bones { get; set; }
-        /// <summary>Number of morphs.</summary>
+        /// <summary>
+        /// Number of morphs.
+        /// </summary>
         public int morphs { get; set; }
-        /// <summary>Number of display frames.</summary>
+        /// <summary>
+        /// Number of display frames.
+        /// </summary>
         public int displayFrames { get; set; }
-        /// <summary>Number of rigid bodies.</summary>
+        /// <summary>
+        /// Number of rigid bodies.
+        /// </summary>
         public int rigidBodies { get; set; }
-        /// <summary>Number of joints.</summary>
+        /// <summary>
+        /// Number of joints.
+        /// </summary>
         public int joints { get; set; }
     }
 
-    /// <summary>Metadata summary for a single PMX material.</summary>
+    /// <summary>
+    /// Metadata summary for a single PMX material.
+    /// </summary>
     public sealed class PMXMaterialMetadata
     {
-        /// <summary>Material index within the model.</summary>
+        /// <summary>
+        /// Material index within the model.
+        /// </summary>
         public int index { get; set; }
-        /// <summary>Original Japanese (local) material name.</summary>
+        /// <summary>
+        /// Original Japanese (local) material name.
+        /// </summary>
         public string originalName { get; set; }
-        /// <summary>Original English material name.</summary>
+        /// <summary>
+        /// Original English material name.
+        /// </summary>
         public string originalNameEN { get; set; }
-        /// <summary>Main texture index, or -1 if none.</summary>
+        /// <summary>
+        /// Main texture index, or -1 if none.
+        /// </summary>
         public int textureIndex { get; set; }
-        /// <summary>Sphere texture index, or -1 if none.</summary>
+        /// <summary>
+        /// Sphere texture index, or -1 if none.
+        /// </summary>
         public int sphereTextureIndex { get; set; }
-        /// <summary>Sphere texture blend mode.</summary>
+        /// <summary>
+        /// Sphere texture blend mode.
+        /// </summary>
         public PMXMaterial.SphereTextureMode sphereTextureMode { get; set; }
-        /// <summary>True when the toon texture is a built-in shared toon.</summary>
+        /// <summary>
+        /// True when the toon texture is a built-in shared toon.
+        /// </summary>
         public bool toonTextureReferenceFlag { get; set; }
-        /// <summary>Toon texture index, or -1 when using a built-in toon.</summary>
+        /// <summary>
+        /// Toon texture index, or -1 when using a built-in toon.
+        /// </summary>
         public int toonTextureIndex { get; set; }
-        /// <summary>Built-in shared toon index, or -1 when using a model toon texture.</summary>
+        /// <summary>
+        /// Built-in shared toon index, or -1 when using a model toon texture.
+        /// </summary>
         public int builtinToonIndex { get; set; }
-        /// <summary>Drawing flags rendered as their flag names.</summary>
+        /// <summary>
+        /// Drawing flags rendered as their flag names.
+        /// </summary>
         public string drawingFlags { get; set; }
-        /// <summary>Number of face indices consumed by this material.</summary>
+        /// <summary>
+        /// Number of face indices consumed by this material.
+        /// </summary>
         public int faceIndexCount { get; set; }
-        /// <summary>Number of triangles consumed by this material.</summary>
+        /// <summary>
+        /// Number of triangles consumed by this material.
+        /// </summary>
         public int triangleCount { get; set; }
     }
 
-    /// <summary>Metadata summary for a single PMX bone.</summary>
+    /// <summary>
+    /// Metadata summary for a single PMX bone.
+    /// </summary>
     public sealed class PMXBoneMetadata
     {
-        /// <summary>Bone index within the model.</summary>
+        /// <summary>
+        /// Bone index within the model.
+        /// </summary>
         public int index { get; set; }
-        /// <summary>Original Japanese (local) bone name.</summary>
+        /// <summary>
+        /// Original Japanese (local) bone name.
+        /// </summary>
         public string originalName { get; set; }
-        /// <summary>Original English bone name.</summary>
+        /// <summary>
+        /// Original English bone name.
+        /// </summary>
         public string originalNameEN { get; set; }
-        /// <summary>Index of the parent bone, or -1 for a root bone.</summary>
+        /// <summary>
+        /// Index of the parent bone, or -1 for a root bone.
+        /// </summary>
         public int parentBoneIndex { get; set; }
-        /// <summary>Deformation/transform order layer.</summary>
+        /// <summary>
+        /// Deformation/transform order layer.
+        /// </summary>
         public int transformLevel { get; set; }
-        /// <summary>Bone flags rendered as their flag names.</summary>
+        /// <summary>
+        /// Bone flags rendered as their flag names.
+        /// </summary>
         public string flags { get; set; }
-        /// <summary>True when the bone drives an IK chain.</summary>
+        /// <summary>
+        /// True when the bone drives an IK chain.
+        /// </summary>
         public bool hasIK { get; set; }
-        /// <summary>Number of links in the bone's IK chain, or 0 if none.</summary>
+        /// <summary>
+        /// Number of links in the bone's IK chain, or 0 if none.
+        /// </summary>
         public int ikLinkCount { get; set; }
     }
 
-    /// <summary>Metadata summary for a single PMX morph.</summary>
+    /// <summary>
+    /// Metadata summary for a single PMX morph.
+    /// </summary>
     public sealed class PMXMorphMetadata
     {
-        /// <summary>Morph index within the model.</summary>
+        /// <summary>
+        /// Morph index within the model.
+        /// </summary>
         public int index { get; set; }
-        /// <summary>Original Japanese (local) morph name.</summary>
+        /// <summary>
+        /// Original Japanese (local) morph name.
+        /// </summary>
         public string originalName { get; set; }
-        /// <summary>Original English morph name.</summary>
+        /// <summary>
+        /// Original English morph name.
+        /// </summary>
         public string originalNameEN { get; set; }
-        /// <summary>Editor display panel group.</summary>
+        /// <summary>
+        /// Editor display panel group.
+        /// </summary>
         public byte panel { get; set; }
-        /// <summary>Morph type name.</summary>
+        /// <summary>
+        /// Morph type name.
+        /// </summary>
         public string type { get; set; }
-        /// <summary>Number of offset entries in the morph.</summary>
+        /// <summary>
+        /// Number of offset entries in the morph.
+        /// </summary>
         public int offsetCount { get; set; }
     }
 
-    /// <summary>Metadata summary for a single PMX display frame.</summary>
+    /// <summary>
+    /// Metadata summary for a single PMX display frame.
+    /// </summary>
     public sealed class PMXDisplayFrameMetadata
     {
-        /// <summary>Display frame index within the model.</summary>
+        /// <summary>
+        /// Display frame index within the model.
+        /// </summary>
         public int index { get; set; }
-        /// <summary>Original Japanese (local) display frame name.</summary>
+        /// <summary>
+        /// Original Japanese (local) display frame name.
+        /// </summary>
         public string originalName { get; set; }
-        /// <summary>Original English display frame name.</summary>
+        /// <summary>
+        /// Original English display frame name.
+        /// </summary>
         public string originalNameEN { get; set; }
-        /// <summary>True for reserved special frames.</summary>
+        /// <summary>
+        /// True for reserved special frames.
+        /// </summary>
         public bool isSpecialFrame { get; set; }
-        /// <summary>Number of elements in the frame.</summary>
+        /// <summary>
+        /// Number of elements in the frame.
+        /// </summary>
         public int elementCount { get; set; }
     }
 
-    /// <summary>Metadata summary for a single PMX rigid body.</summary>
+    /// <summary>
+    /// Metadata summary for a single PMX rigid body.
+    /// </summary>
     public sealed class PMXRigidBodyMetadata
     {
-        /// <summary>Rigid body index within the model.</summary>
+        /// <summary>
+        /// Rigid body index within the model.
+        /// </summary>
         public int index { get; set; }
-        /// <summary>Original Japanese (local) rigid body name.</summary>
+        /// <summary>
+        /// Original Japanese (local) rigid body name.
+        /// </summary>
         public string originalName { get; set; }
-        /// <summary>Original English rigid body name.</summary>
+        /// <summary>
+        /// Original English rigid body name.
+        /// </summary>
         public string originalNameEN { get; set; }
-        /// <summary>Index of the associated bone, or -1 if none.</summary>
+        /// <summary>
+        /// Index of the associated bone, or -1 if none.
+        /// </summary>
         public int relatedBoneIndex { get; set; }
-        /// <summary>Collision shape.</summary>
+        /// <summary>
+        /// Collision shape.
+        /// </summary>
         public PMXRigidBody.Shape shape { get; set; }
-        /// <summary>Physics behavior mode.</summary>
+        /// <summary>
+        /// Physics behavior mode.
+        /// </summary>
         public PMXRigidBody.Mode mode { get; set; }
     }
 
-    /// <summary>Metadata summary for a single PMX joint.</summary>
+    /// <summary>
+    /// Metadata summary for a single PMX joint.
+    /// </summary>
     public sealed class PMXJointMetadata
     {
-        /// <summary>Joint index within the model.</summary>
+        /// <summary>
+        /// Joint index within the model.
+        /// </summary>
         public int index { get; set; }
-        /// <summary>Original Japanese (local) joint name.</summary>
+        /// <summary>
+        /// Original Japanese (local) joint name.
+        /// </summary>
         public string originalName { get; set; }
-        /// <summary>Original English joint name.</summary>
+        /// <summary>
+        /// Original English joint name.
+        /// </summary>
         public string originalNameEN { get; set; }
-        /// <summary>Constraint type.</summary>
+        /// <summary>
+        /// Constraint type.
+        /// </summary>
         public PMXJoint.Type type { get; set; }
-        /// <summary>Index of the first connected rigid body.</summary>
+        /// <summary>
+        /// Index of the first connected rigid body.
+        /// </summary>
         public int rigidBodyAIndex { get; set; }
-        /// <summary>Index of the second connected rigid body.</summary>
+        /// <summary>
+        /// Index of the second connected rigid body.
+        /// </summary>
         public int rigidBodyBIndex { get; set; }
     }
 }

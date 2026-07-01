@@ -8,9 +8,7 @@ using UnityEngine;
 namespace UMT
 {
     /// <summary>
-    /// Per-bone runtime data for the MMD transform solver: transform order, initial pose,
-    /// constraints, IK, and solved transform state. Holds the blittable <see cref="BoneSolverData"/>
-    /// used by the Burst-compiled solver.
+    /// Per-bone runtime data for the MMD transform solver: transform order, initial pose, constraints, IK, and solved transform state. Holds the blittable <see cref="BoneSolverData"/> used by the Burst-compiled solver.
     /// </summary>
     public sealed class MMDBoneTransform : MonoBehaviour
     {
@@ -48,8 +46,7 @@ namespace UMT
         public MMDBoneIKData ik = new MMDBoneIKData();
 
         /// <summary>
-        /// Blittable per-bone solver state used by the Burst-compiled MMD transform solver.
-        /// Combines read-only initial/constraint data with mutable solved transform state.
+        /// Blittable per-bone solver state used by the Burst-compiled MMD transform solver. Combines read-only initial/constraint data with mutable solved transform state.
         /// </summary>
         public struct BoneSolverData
         {
@@ -115,46 +112,20 @@ namespace UMT
             /// Initializes solver data from an <see cref="MMDBoneTransform"/> component.
             /// </summary>
             /// <param name="bone">Source bone component.</param>
-            public BoneSolverData(MMDBoneTransform bone) : this(
-                bone.boneName,
-                bone.initialModelPosition, 
-                bone.initialLocalPosition, 
-                bone.initialLocalRotation, 
-                bone.constraintInfluence, 
-                bone.constraintTarget != null ? bone.constraintTarget.boneIndex : -1, 
-                bone.localConstraint, 
-                bone.rotationConstraint, 
-                bone.translationConstraint, 
-                bone.flags.HasFlag(PMXBone.Flags.Translatable), 
-                bone.flags.HasFlag(PMXBone.Flags.Rotatable), 
-                bone.parentBone != null ? bone.parentBone.boneIndex : -1)
+            public BoneSolverData(MMDBoneTransform bone) : this(bone.boneName, bone.initialModelPosition, bone.initialLocalPosition, bone.initialLocalRotation, bone.constraintInfluence, bone.constraintTarget != null ? bone.constraintTarget.boneIndex : -1, bone.localConstraint, bone.rotationConstraint, bone.translationConstraint, bone.flags.HasFlag(PMXBone.Flags.Translatable), bone.flags.HasFlag(PMXBone.Flags.Rotatable), bone.parentBone != null ? bone.parentBone.boneIndex : -1)
             {
             }
 
             /// <summary>
-            /// Initializes solver data by copying the read-only initial/constraint fields of another instance,
-            /// resetting all mutable solved state to defaults.
+            /// Initializes solver data by copying the read-only initial/constraint fields of another instance, resetting all mutable solved state to defaults.
             /// </summary>
             /// <param name="other">Source solver data to copy read-only fields from.</param>
-            public BoneSolverData(BoneSolverData other) : this(
-                other.boneName,
-                other.initialModelPosition, 
-                other.initialLocalPosition, 
-                other.initialLocalRotation, 
-                other.constraintInfluence, 
-                other.constraintTargetBoneIndex, 
-                other.localConstraint, 
-                other.rotationConstraint, 
-                other.translationConstraint, 
-                other.translatable, 
-                other.rotatable, 
-                other.parentBoneIndex)
+            public BoneSolverData(BoneSolverData other) : this(other.boneName, other.initialModelPosition, other.initialLocalPosition, other.initialLocalRotation, other.constraintInfluence, other.constraintTargetBoneIndex, other.localConstraint, other.rotationConstraint, other.translationConstraint, other.translatable, other.rotatable, other.parentBoneIndex)
             {
             }
 
             /// <summary>
-            /// Initializes solver data from explicit initial and constraint values, with all mutable
-            /// solved state set to identity/zero defaults.
+            /// Initializes solver data from explicit initial and constraint values, with all mutable solved state set to identity/zero defaults.
             /// </summary>
             /// <param name="boneName">Original PMX bone name truncated to a fixed string.</param>
             /// <param name="initialModelPosition">Initial bone position in model space.</param>
@@ -168,18 +139,7 @@ namespace UMT
             /// <param name="translatable">Whether this bone may be translated.</param>
             /// <param name="rotatable">Whether this bone may be rotated.</param>
             /// <param name="parentBoneIndex">Index of the parent bone, or negative for a root bone.</param>
-            public BoneSolverData(FixedString32Bytes boneName
-                , float3 initialModelPosition
-                , float3 initialLocalPosition
-                , quaternion initialLocalRotation
-                , float constraintInfluence
-                , int constraintTargetBoneIndex
-                , bool localConstraint
-                , bool rotationConstraint
-                , bool translationConstraint
-                , bool translatable
-                , bool rotatable
-                , int parentBoneIndex)
+            public BoneSolverData(FixedString32Bytes boneName, float3 initialModelPosition, float3 initialLocalPosition, quaternion initialLocalRotation, float constraintInfluence, int constraintTargetBoneIndex, bool localConstraint, bool rotationConstraint, bool translationConstraint, bool translatable, bool rotatable, int parentBoneIndex)
             {
                 this.boneName = boneName;
                 this.initialModelPosition = initialModelPosition;
@@ -218,12 +178,13 @@ namespace UMT
             }
         };
 
-        /// <summary>Current solver state for this bone, mirrored into the transform manager's native cache.</summary>
+        /// <summary>
+        /// Current solver state for this bone, mirrored into the transform manager's native cache.
+        /// </summary>
         [NonSerialized] public BoneSolverData runtimeData = BoneSolverData.CreateDefault();
 
         /// <summary>
-        /// Captures the current Unity local transform as this bone's initial pose and re-seeds
-        /// the runtime solver data so the local, IK-link, and solved transforms start from it.
+        /// Captures the current Unity local transform as this bone's initial pose and re-seeds the runtime solver data so the local, IK-link, and solved transforms start from it.
         /// </summary>
         public void RefreshInitialTransform()
         {
@@ -240,21 +201,17 @@ namespace UMT
 
         
         /// <summary>
-        /// Solves a bone's local and world matrices, applying constraints, then writes the result
-        /// back into the solver context.
+        /// Solves a bone's local and world matrices, applying constraints, then writes the result back into the solver context.
         /// </summary>
         /// <param name="transformManagerContext">Solver context holding all bone solver data.</param>
         /// <param name="boneIndex">Index of the bone to update.</param>
-        internal static void UpdateLocalMatrix(
-            ref MMDTransformManager.SolverContext transformManagerContext,
-            int boneIndex)
+        internal static void UpdateLocalMatrix(ref MMDTransformManager.SolverContext transformManagerContext, int boneIndex)
         {
             BoneMath.UpdateLocalMatrixInternal(ref transformManagerContext, boneIndex);
         }
 
         /// <summary>
-        /// Recomputes a bone's local and world matrices from its sampled local transform without
-        /// solving constraints, marking it as not yet solved.
+        /// Recomputes a bone's local and world matrices from its sampled local transform without solving constraints, marking it as not yet solved.
         /// </summary>
         /// <param name="runtimeData">Bone solver data to update.</param>
         /// <param name="parentWorldMatrix">World matrix of the bone's parent.</param>
@@ -264,8 +221,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Recomputes a bone's matrices from its IK-link base transform plus the current IK rotation,
-        /// marking it solved by IK.
+        /// Recomputes a bone's matrices from its IK-link base transform plus the current IK rotation, marking it solved by IK.
         /// </summary>
         /// <param name="runtimeData">Bone solver data to update.</param>
         /// <param name="parentWorldMatrix">World matrix of the bone's parent.</param>
@@ -275,8 +231,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Resets a bone's runtime data to the start of a solve pass, restoring either the initial
-        /// pose (when the current transform matches the last solved transform) or the sampled transform.
+        /// Resets a bone's runtime data to the start of a solve pass, restoring either the initial pose (when the current transform matches the last solved transform) or the sampled transform.
         /// </summary>
         /// <param name="runtimeData">Bone solver data to reset.</param>
         /// <param name="currentLocalPosition">Current sampled local position.</param>
@@ -299,18 +254,13 @@ namespace UMT
         }
 
         /// <summary>
-        /// Directly applies a local position and rotation to a bone, recomputing its matrices and
-        /// marking it solved (not by IK).
+        /// Directly applies a local position and rotation to a bone, recomputing its matrices and marking it solved (not by IK).
         /// </summary>
         /// <param name="transformManagerContext">Solver context holding all bone solver data.</param>
         /// <param name="boneIndex">Index of the bone to update.</param>
         /// <param name="localPosition">Local position to apply.</param>
         /// <param name="localRotation">Local rotation to apply.</param>
-        internal static void ApplyLocalTransformToBone(
-                ref MMDTransformManager.SolverContext transformManagerContext,
-                int boneIndex,
-                in float3 localPosition,
-                in quaternion localRotation)
+        internal static void ApplyLocalTransformToBone(ref MMDTransformManager.SolverContext transformManagerContext, int boneIndex, in float3 localPosition, in quaternion localRotation)
         {
             BoneMath.ApplyLocalTransformToBoneInternal(ref transformManagerContext, boneIndex, in localPosition, in localRotation);
         }
@@ -319,9 +269,7 @@ namespace UMT
         private static class BoneMath
         {
             /// <summary>
-            /// Burst implementation that recomputes a bone's solved local/world matrices, applying any
-            /// MMD rotation/translation constraint from its constraint target bone before composing the
-            /// final transform.
+            /// Burst implementation that recomputes a bone's solved local/world matrices, applying any MMD rotation/translation constraint from its constraint target bone before composing the final transform.
             /// </summary>
             /// <param name="transformManagerContext">Solver context holding all bone solver data.</param>
             /// <param name="boneIndex">Index of the bone whose matrix is recomputed.</param>
@@ -330,9 +278,7 @@ namespace UMT
             {
                 BoneSolverData input = transformManagerContext.boneSolverData[boneIndex];
                 BoneSolverData output = input;
-                BoneSolverData constraintRuntimeData = input.constraintTargetBoneIndex >= 0
-                    ? transformManagerContext.boneSolverData[input.constraintTargetBoneIndex]
-                    : BoneSolverData.CreateDefault();
+                BoneSolverData constraintRuntimeData = input.constraintTargetBoneIndex >= 0 ? transformManagerContext.boneSolverData[input.constraintTargetBoneIndex] : BoneSolverData.CreateDefault();
                 float3 nextPosition = input.localPosition;
                 quaternion nextRotation = input.localRotation;
                 float3 localPositionDelta = LocalPositionDelta(input.localPosition, input.initialLocalPosition);
@@ -342,12 +288,8 @@ namespace UMT
                 {
                     if (input.rotationConstraint)
                     {
-                        quaternion sourceRotation = input.localConstraint
-                            ? ModelRotation(constraintRuntimeData.worldMatrix)
-                            : math.mul(constraintRuntimeData.rotationConstraintValue, constraintRuntimeData.ikRotation);
-                        quaternion weightedRotation = input.constraintInfluence >= 0.0f
-                            ? math.slerp(quaternion.identity, sourceRotation, input.constraintInfluence)
-                            : math.slerp(quaternion.identity, math.inverse(sourceRotation), -input.constraintInfluence);
+                        quaternion sourceRotation = input.localConstraint ? ModelRotation(constraintRuntimeData.worldMatrix) : math.mul(constraintRuntimeData.rotationConstraintValue, constraintRuntimeData.ikRotation);
+                        quaternion weightedRotation = input.constraintInfluence >= 0.0f ? math.slerp(quaternion.identity, sourceRotation, input.constraintInfluence) : math.slerp(quaternion.identity, math.inverse(sourceRotation), -input.constraintInfluence);
                         nextRotation = math.mul(weightedRotation, nextRotation);
                         output.rotationConstraintValue = math.mul(weightedRotation, localRotationDelta);
                     }
@@ -358,9 +300,7 @@ namespace UMT
 
                     if (input.translationConstraint)
                     {
-                        float3 sourceTranslation = input.localConstraint
-                            ? math.transform(constraintRuntimeData.worldMatrix, float3.zero)- constraintRuntimeData.initialModelPosition
-                            : constraintRuntimeData.translationConstraintValue;
+                        float3 sourceTranslation = input.localConstraint ? math.transform(constraintRuntimeData.worldMatrix, float3.zero)- constraintRuntimeData.initialModelPosition : constraintRuntimeData.translationConstraintValue;
                         float3 weightedTranslation = sourceTranslation * input.constraintInfluence;
                         nextPosition += weightedTranslation;
                         output.translationConstraintValue = weightedTranslation + localPositionDelta;
@@ -389,8 +329,7 @@ namespace UMT
             }
 
             /// <summary>
-            /// Burst implementation that resets a bone's solver data toward its initial pose, restoring the
-            /// initial local transform when the sampled transform still matches the previously solved value.
+            /// Burst implementation that resets a bone's solver data toward its initial pose, restoring the initial local transform when the sampled transform still matches the previously solved value.
             /// </summary>
             /// <param name="runtimeData">Bone solver data to reset, updated in place.</param>
             /// <param name="currentLocalPosition">Local position currently sampled from the Unity transform.</param>
@@ -409,8 +348,7 @@ namespace UMT
             }
 
             /// <summary>
-            /// Burst implementation that recomputes a bone's local/world matrices and constraint deltas from
-            /// its current local transform without marking it solved (used to observe externally driven bones).
+            /// Burst implementation that recomputes a bone's local/world matrices and constraint deltas from its current local transform without marking it solved (used to observe externally driven bones).
             /// </summary>
             /// <param name="runtimeData">Bone solver data to update in place.</param>
             /// <param name="parentWorldMatrix">World matrix of the bone's parent.</param>
@@ -427,8 +365,7 @@ namespace UMT
             }
 
             /// <summary>
-            /// Burst implementation that rebuilds an IK link bone's matrices from its IK-link local transform
-            /// and IK rotation, marking the bone as solved by IK.
+            /// Burst implementation that rebuilds an IK link bone's matrices from its IK-link local transform and IK rotation, marking the bone as solved by IK.
             /// </summary>
             /// <param name="runtimeData">Bone solver data to update in place.</param>
             /// <param name="parentWorldMatrix">World matrix of the bone's parent.</param>
@@ -472,8 +409,7 @@ namespace UMT
             }
 
             /// <summary>
-            /// Burst implementation that resolves a bone's parent world matrix, falling back to the solver's
-            /// root parent world matrix when the bone has no parent.
+            /// Burst implementation that resolves a bone's parent world matrix, falling back to the solver's root parent world matrix when the bone has no parent.
             /// </summary>
             /// <param name="transformManagerContext">Solver context holding all bone solver data.</param>
             /// <param name="boneIndex">Index of the bone whose parent matrix is resolved.</param>
@@ -482,25 +418,18 @@ namespace UMT
             internal static void GetParentWorldMatrixInternal(ref MMDTransformManager.SolverContext transformManagerContext, int boneIndex, out float4x4 parentWorldMatrix)
             {
                 int parentBoneIndex = transformManagerContext.boneSolverData[boneIndex].parentBoneIndex;
-                parentWorldMatrix = parentBoneIndex >= 0
-                    ? transformManagerContext.boneSolverData[parentBoneIndex].worldMatrix
-                    : transformManagerContext.rootParentWorldMatrix;
+                parentWorldMatrix = parentBoneIndex >= 0 ? transformManagerContext.boneSolverData[parentBoneIndex].worldMatrix : transformManagerContext.rootParentWorldMatrix;
             }
 
             /// <summary>
-            /// Burst implementation that writes a local position and rotation directly onto a bone, recomputing
-            /// its matrices and marking it solved but not driven by IK.
+            /// Burst implementation that writes a local position and rotation directly onto a bone, recomputing its matrices and marking it solved but not driven by IK.
             /// </summary>
             /// <param name="transformManagerContext">Solver context holding all bone solver data.</param>
             /// <param name="boneIndex">Index of the bone to update.</param>
             /// <param name="localPosition">Local position to apply.</param>
             /// <param name="localRotation">Local rotation to apply.</param>
             [BurstCompile]
-            internal static void ApplyLocalTransformToBoneInternal(
-                ref MMDTransformManager.SolverContext transformManagerContext,
-                int boneIndex,
-                in float3 localPosition,
-                in quaternion localRotation)
+            internal static void ApplyLocalTransformToBoneInternal(ref MMDTransformManager.SolverContext transformManagerContext, int boneIndex, in float3 localPosition, in quaternion localRotation)
             {
                 MMDBoneTransform.BoneSolverData runtimeData = transformManagerContext.boneSolverData[boneIndex];
                 runtimeData.localPosition = localPosition;
@@ -520,8 +449,7 @@ namespace UMT
     }
 
     /// <summary>
-    /// IK controller data for a bone: the IK target, iteration count, per-iteration angle limit,
-    /// and the ordered IK link chain.
+    /// IK controller data for a bone: the IK target, iteration count, per-iteration angle limit, and the ordered IK link chain.
     /// </summary>
     [Serializable]
     public sealed class MMDBoneIKData
@@ -537,8 +465,7 @@ namespace UMT
     }
 
     /// <summary>
-    /// A single IK link in an IK chain, with its bone, optional per-axis angle limits, and the
-    /// derived fix-axis and Euler decomposition order used while solving.
+    /// A single IK link in an IK chain, with its bone, optional per-axis angle limits, and the derived fix-axis and Euler decomposition order used while solving.
     /// </summary>
     [Serializable]
     public sealed class MMDBoneIKLinkData
@@ -562,15 +489,25 @@ namespace UMT
     /// </summary>
     public enum MMDIKFixAxis : byte
     {
-        /// <summary>No axis constraint.</summary>
+        /// <summary>
+        /// No axis constraint.
+        /// </summary>
         None,
-        /// <summary>The link is fully fixed (no rotation).</summary>
+        /// <summary>
+        /// The link is fully fixed (no rotation).
+        /// </summary>
         Fix,
-        /// <summary>Rotation is constrained to the X axis.</summary>
+        /// <summary>
+        /// Rotation is constrained to the X axis.
+        /// </summary>
         X,
-        /// <summary>Rotation is constrained to the Y axis.</summary>
+        /// <summary>
+        /// Rotation is constrained to the Y axis.
+        /// </summary>
         Y,
-        /// <summary>Rotation is constrained to the Z axis.</summary>
+        /// <summary>
+        /// Rotation is constrained to the Z axis.
+        /// </summary>
         Z,
     }
 
@@ -579,11 +516,17 @@ namespace UMT
     /// </summary>
     public enum MMDIKEulerOrder : byte
     {
-        /// <summary>Z-X-Y decomposition order.</summary>
+        /// <summary>
+        /// Z-X-Y decomposition order.
+        /// </summary>
         ZXY,
-        /// <summary>X-Y-Z decomposition order.</summary>
+        /// <summary>
+        /// X-Y-Z decomposition order.
+        /// </summary>
         XYZ,
-        /// <summary>Y-Z-X decomposition order.</summary>
+        /// <summary>
+        /// Y-Z-X decomposition order.
+        /// </summary>
         YZX,
     }
 }

@@ -5,8 +5,7 @@ using UnityEngine;
 namespace UMT
 {
     /// <summary>
-    /// Optionally builds and assigns a humanoid <see cref="Avatar"/> for an imported PMX model by mapping
-    /// PMX bones to Unity human bones using the configured avatar mapping resource.
+    /// Optionally builds and assigns a humanoid <see cref="Avatar"/> for an imported PMX model by mapping PMX bones to Unity human bones using the configured avatar mapping resource.
     /// </summary>
     public static class PMXAvatarBuilder
     {
@@ -27,8 +26,7 @@ namespace UMT
         private static readonly Dictionary<HumanBodyBones, string> s_HumanTraitBoneNames = BuildHumanTraitBoneNames();
 
         /// <summary>
-        /// Builds a humanoid avatar for the model, adding an <see cref="Animator"/> and assigning the avatar
-        /// when the required human bones can be mapped; otherwise returns a result without an avatar.
+        /// Builds a humanoid avatar for the model, adding an <see cref="Animator"/> and assigning the avatar when the required human bones can be mapped; otherwise returns a result without an avatar.
         /// </summary>
         /// <param name="model">PMX model providing bone names for mapping.</param>
         /// <param name="root">Root object that receives the <see cref="Animator"/> and avatar.</param>
@@ -100,14 +98,12 @@ namespace UMT
             int leftLowerArmIndex = (int)HumanBodyBones.LeftLowerArm;
             int rightUpperArmIndex = (int)HumanBodyBones.RightUpperArm;
             int rightLowerArmIndex = (int)HumanBodyBones.RightLowerArm;
-            if (leftLowerArmIndex >= mappedBones.Length || leftUpperArmIndex >= mappedBones.Length ||
-                rightLowerArmIndex >= mappedBones.Length || rightUpperArmIndex >= mappedBones.Length)
+            if (leftLowerArmIndex >= mappedBones.Length || leftUpperArmIndex >= mappedBones.Length || rightLowerArmIndex >= mappedBones.Length || rightUpperArmIndex >= mappedBones.Length)
             {
                 return;
             }
 
-            if (mappedBones[leftUpperArmIndex] == null || mappedBones[leftLowerArmIndex] == null ||
-                mappedBones[rightUpperArmIndex] == null || mappedBones[rightLowerArmIndex] == null)
+            if (mappedBones[leftUpperArmIndex] == null || mappedBones[leftLowerArmIndex] == null || mappedBones[rightUpperArmIndex] == null || mappedBones[rightLowerArmIndex] == null)
             {
                 return;
             }
@@ -120,8 +116,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Attempts to map PMX bones to Unity human bones using the configured mapping, succeeding only when
-        /// all required human bones are present.
+        /// Attempts to map PMX bones to Unity human bones using the configured mapping, succeeding only when all required human bones are present.
         /// </summary>
         /// <param name="model">PMX model providing bone names.</param>
         /// <param name="bones">Bone transforms corresponding to the model's bones.</param>
@@ -172,8 +167,7 @@ namespace UMT
             for (int i = 0; i < mappedBones.Length; ++i)
             {
                 GameObject bone = mappedBones[i];
-                if (bone == null ||
-                    !s_HumanTraitBoneNames.TryGetValue((HumanBodyBones)i, out string humanName))
+                if (bone == null || !s_HumanTraitBoneNames.TryGetValue((HumanBodyBones)i, out string humanName))
                 {
                     continue;
                 }
@@ -244,9 +238,7 @@ namespace UMT
                     continue;
                 }
 
-                if (model.bones[i].originalName.ToString() == sourceBoneName ||
-                    model.bones[i].originalNameEN.ToString() == sourceBoneName ||
-                    bones[i].name == sourceBoneName)
+                if (model.bones[i].originalName.ToString() == sourceBoneName || model.bones[i].originalNameEN.ToString() == sourceBoneName || bones[i].name == sourceBoneName)
                 {
                     return bones[i];
                 }
@@ -259,8 +251,7 @@ namespace UMT
         {
             foreach (string requiredHumanBone in requiredHumanBones ?? Array.Empty<string>())
             {
-                if (!TryParseHumanBodyBone(requiredHumanBone, out HumanBodyBones humanBodyBone) ||
-                    mappedBones[(int)humanBodyBone] == null)
+                if (!TryParseHumanBodyBone(requiredHumanBone, out HumanBodyBones humanBodyBone) || mappedBones[(int)humanBodyBone] == null)
                 {
                     return false;
                 }

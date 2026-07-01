@@ -305,7 +305,9 @@ namespace UMT
             return table;
         }
 
-        /// <summary>Decodes <paramref name="count"/> CP932 bytes starting at <paramref name="index"/> into a string.</summary>
+        /// <summary>
+        /// Decodes <paramref name="count"/> CP932 bytes starting at <paramref name="index"/> into a string.
+        /// </summary>
         public static string GetString(byte[] bytes, int index, int count)
         {
             if (bytes == null)

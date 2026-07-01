@@ -4,7 +4,9 @@ using UnityEngine;
 
 namespace UMT
 {
-    /// <summary>Options controlling how a PMX file is parsed and built into Unity objects.</summary>
+    /// <summary>
+    /// Options controlling how a PMX file is parsed and built into Unity objects.
+    /// </summary>
     public sealed class PMXImportOptions
     {
         /// <summary>Source PMX file path; set automatically by file-based import.</summary>
@@ -33,10 +35,7 @@ namespace UMT
         public float alphaDetectionThreshold = 0.99f;
         /// <summary>Alpha-coverage value at or above which a transparent material keeps Z-write enabled.</summary>
         public float alphaCoverageZWriteThreshold = 0.90f;
-        /// <summary>
-        /// Optional per-slot material overrides keyed by the generated material name (the sanitized slot key).
-        /// When an entry exists for a slot, the builder uses that material directly instead of generating one.
-        /// </summary>
+        /// <summary>Optional per-slot material overrides keyed by the generated material name (the sanitized slot key). When an entry exists for a slot, the builder uses that material directly instead of generating one.</summary>
         public Dictionary<string, Material> materialOverrides;
     }
 }

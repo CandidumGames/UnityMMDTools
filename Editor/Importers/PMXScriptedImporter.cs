@@ -8,8 +8,7 @@ using UnityEngine;
 namespace UMT.Editor
 {
     /// <summary>
-    /// Unity <see cref="ScriptedImporter"/> for <c>.pmx</c> assets that runs the full PMX import pipeline and,
-    /// optionally, converts attached VMD animations into <see cref="AnimationClip"/> sub-assets.
+    /// Unity <see cref="ScriptedImporter"/> for <c>.pmx</c> assets that runs the full PMX import pipeline and, optionally, converts attached VMD animations into <see cref="AnimationClip"/> sub-assets.
     /// </summary>
     [ScriptedImporter(1, new[] { "pmx" })]
     public sealed class PMXScriptedImporter : ScriptedImporter
@@ -24,8 +23,7 @@ namespace UMT.Editor
         [SerializeField] private float m_VMDPhysicsWarmUpDuration = 5.0f;
 
         /// <summary>
-        /// Declares that generated <see cref="Material"/> sub-assets can be remapped to external assets,
-        /// enabling the Materials tab's per-slot overrides and "Extract Materials..." action.
+        /// Declares that generated <see cref="Material"/> sub-assets can be remapped to external assets, enabling the Materials tab's per-slot overrides and "Extract Materials..." action.
         /// </summary>
         /// <param name="type">Sub-asset type being queried for remap support.</param>
         /// <returns>True for <see cref="Material"/>; otherwise false.</returns>
@@ -35,8 +33,7 @@ namespace UMT.Editor
         }
 
         /// <summary>
-        /// Imports the <c>.pmx</c> asset: builds the model, materials, meshes, MMD runtime components, and optional
-        /// avatar, registers them with the import context, and converts any attached VMD animations to clips.
+        /// Imports the <c>.pmx</c> asset: builds the model, materials, meshes, MMD runtime components, and optional avatar, registers them with the import context, and converts any attached VMD animations to clips.
         /// </summary>
         /// <param name="ctx">Asset import context for the source PMX file.</param>
         public override void OnImportAsset(AssetImportContext ctx)
@@ -90,13 +87,9 @@ namespace UMT.Editor
                         continue;
                     }
 
-                    string clipName = string.IsNullOrEmpty(vmdAnimation.name)
-                        ? "VMDClip"
-                        : $"{vmdAnimation.name}_Clip";
+                    string clipName = string.IsNullOrEmpty(vmdAnimation.name) ? "VMDClip" : $"{vmdAnimation.name}_Clip";
                     string progressTitle = $"Converting VMD {i + 1}/{m_VMDAnimations.Count}";
-                    VMDModelClipData clipData = VMDAnimationClipConverter.Convert(
-                        vmdAnimation, model, vmdOptions,
-                        (stage, frame, totalFrames) => VMDClipProgress.Report(progressTitle, clipName, stage, frame, totalFrames));
+                    VMDModelClipData clipData = VMDAnimationClipConverter.Convert(vmdAnimation, model, vmdOptions, (stage, frame, totalFrames) => VMDClipProgress.Report(progressTitle, clipName, stage, frame, totalFrames));
                     AnimationClip clip = VMDClipDataBuilder.BuildAnimationClip(clipData, vmdOptions.frameRate);
                     clip.name = clipName;
                     ctx.AddObjectToAsset(clipName, clip);
@@ -112,13 +105,7 @@ namespace UMT.Editor
                 File.WriteAllText(timingLogPath, timingReport);
             }
 
-            Debug.Log(
-                $"[PMX Import] {ctx.assetPath}: model={pipelineResult.modelName}, " +
-                $"meshes={pipelineResult.meshCount}, materials={pipelineResult.materialCount}, " +
-                $"remapped={pipelineResult.remappedMaterialCount}, " +
-                $"avatar={pipelineResult.hasAvatar}, renamed={pipelineResult.renameCount}, " +
-                $"vmdClips={m_VMDAnimations.Count}\n" +
-                timingReport);
+            Debug.Log($"[PMX Import] {ctx.assetPath}: model={pipelineResult.modelName}, " + $"meshes={pipelineResult.meshCount}, materials={pipelineResult.materialCount}, " + $"remapped={pipelineResult.remappedMaterialCount}, " + $"avatar={pipelineResult.hasAvatar}, renamed={pipelineResult.renameCount}, " + $"vmdClips={m_VMDAnimations.Count}\n" + timingReport);
         }
     }
 }

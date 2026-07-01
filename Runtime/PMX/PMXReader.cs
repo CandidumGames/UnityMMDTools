@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -8,13 +9,13 @@ using UnityEngine;
 namespace UMT
 {
     /// <summary>
-    /// Parses a PMX binary stream into a <see cref="PMXModel"/>. Reads the header, model info, vertices,
-    /// faces, textures, materials, bones, morphs, display frames, rigid bodies, and joints, scaling
-    /// position-like values from MMD units to Unity units during parsing.
+    /// Parses a PMX binary stream into a <see cref="PMXModel"/>. Reads the header, model info, vertices, faces, textures, materials, bones, morphs, display frames, rigid bodies, and joints, scaling position-like values from MMD units to Unity units during parsing.
     /// </summary>
     public static class PMXReader
     {
-        /// <summary>Reads and validates a complete PMX model from the given stream.</summary>
+        /// <summary>
+        /// Reads and validates a complete PMX model from the given stream.
+        /// </summary>
         /// <param name="stream">Stream positioned at the start of the PMX data.</param>
         /// <param name="strictVersion">When true, requires the file version to match the supported PMX version.</param>
         /// <returns>The parsed PMX model as a new <see cref="ScriptableObject"/>.</returns>
@@ -40,14 +41,15 @@ namespace UMT
             return model;
         }
 
-        /// <summary>Reads and validates a complete PMX model from the given stream asynchronously, yielding control
-        /// back to the Unity main thread according to <paramref name="frameBudget"/>.</summary>
+        /// <summary>
+        /// Reads and validates a complete PMX model from the given stream asynchronously, yielding control back to the Unity main thread according to <paramref name="frameBudget"/>.
+        /// </summary>
         /// <param name="frameBudget">The frame budget used to yield control during long-running parsing.</param>
         /// <param name="stream">Stream positioned at the start of the PMX data.</param>
         /// <param name="strictVersion">When true, requires the file version to match the supported PMX version.</param>
         /// <returns>The parsed PMX model as a new <see cref="ScriptableObject"/>.</returns>
         /// <exception cref="InvalidDataException">Thrown when the stream contains invalid or unsupported PMX data.</exception>
-        public static async Awaitable<PMXModel> ReadAsync(UMTFrameBudget frameBudget, Stream stream, bool strictVersion = true)
+        public static async Task<PMXModel> ReadAsync(UMTFrameBudget frameBudget, Stream stream, bool strictVersion = true)
         {
             using MMDBinaryReader reader = new MMDBinaryReader(stream, true);
             PMXModel model = ScriptableObject.CreateInstance<PMXModel>();
@@ -473,9 +475,7 @@ namespace UMT
                     frame.elements[elementIndex] = new PMXDisplayFrameElement
                     {
                         targetType = (PMXDisplayFrameElement.Type)targetType,
-                        targetIndex = targetType == 0
-                            ? reader.ReadIndex(model.header.boneIndexSize)
-                            : reader.ReadIndex(model.header.morphIndexSize),
+                        targetIndex = targetType == 0 ? reader.ReadIndex(model.header.boneIndexSize) : reader.ReadIndex(model.header.morphIndexSize),
                     };
                 }
                 model.displayFrames[i] = frame;
@@ -575,14 +575,8 @@ namespace UMT
             float3 rawUpperLimit = reader.ReadVec3();
             float multiplier = scale ? MMDConstants.k_MMDUnitToUnityUnit : 1.0f;
 
-            lowerLimit = new float3(
-                -rawUpperLimit.x * multiplier,
-                rawLowerLimit.y * multiplier,
-                -rawUpperLimit.z * multiplier);
-            upperLimit = new float3(
-                -rawLowerLimit.x * multiplier,
-                rawUpperLimit.y * multiplier,
-                -rawLowerLimit.z * multiplier);
+            lowerLimit = new float3(-rawUpperLimit.x * multiplier, rawLowerLimit.y * multiplier, -rawUpperLimit.z * multiplier);
+            upperLimit = new float3(-rawLowerLimit.x * multiplier, rawUpperLimit.y * multiplier, -rawLowerLimit.z * multiplier);
         }
 
         private static float3 RotateY180(float3 value)

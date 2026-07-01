@@ -8,9 +8,7 @@ using UnityEngine;
 namespace UMT
 {
     /// <summary>
-    /// Parses MikuMikuDance VMD (Vocaloid Motion Data) binary data into a <see cref="VMDAnimation"/>.
-    /// Recognizes the V1 and V2 signatures, decodes names with CP932, and reads bone and morph frames plus the
-    /// optional camera, light, self-shadow, and show/IK sections when present.
+    /// Parses MikuMikuDance VMD (Vocaloid Motion Data) binary data into a <see cref="VMDAnimation"/>. Recognizes the V1 and V2 signatures, decodes names with CP932, and reads bone and morph frames plus the optional camera, light, self-shadow, and show/IK sections when present.
     /// </summary>
     public static class VMDReader
     {
@@ -44,8 +42,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Parses VMD animation data from a stream. Reads the signature/header, bone and morph frames, then the
-        /// optional camera, light, self-shadow, and show/IK sections while data remains.
+        /// Parses VMD animation data from a stream. Reads the signature/header, bone and morph frames, then the optional camera, light, self-shadow, and show/IK sections while data remains.
         /// </summary>
         /// <param name="stream">The stream positioned at the start of the VMD data.</param>
         /// <returns>The parsed <see cref="VMDAnimation"/>.</returns>
@@ -115,7 +112,7 @@ namespace UMT
         /// <returns>The parsed <see cref="VMDAnimation"/>.</returns>
         /// <exception cref="ArgumentException">Thrown when <paramref name="bytes"/> is null or empty.</exception>
         /// <exception cref="InvalidDataException">Thrown when the VMD signature is invalid.</exception>
-        public static async Awaitable<VMDAnimation> ReadAsync(UMTFrameBudget frameBudget, Task<byte[]> bytesTask)
+        public static async Task<VMDAnimation> ReadAsync(UMTFrameBudget frameBudget, Task<byte[]> bytesTask)
         {
             byte[] bytes = await bytesTask;
             if (bytes == null || bytes.Length == 0)
@@ -128,15 +125,14 @@ namespace UMT
         }
 
         /// <summary>
-        /// Parses VMD animation data from a stream asynchronously. Reads the signature/header, bone and morph frames, then the
-        /// optional camera, light, self-shadow, and show/IK sections while data remains.
+        /// Parses VMD animation data from a stream asynchronously. Reads the signature/header, bone and morph frames, then the optional camera, light, self-shadow, and show/IK sections while data remains.
         /// </summary>
         /// <param name="frameBudget">The frame budget used to yield control back to the Unity main thread during long-running operations.</param>
         /// <param name="stream">The stream positioned at the start of the VMD data.</param>
         /// <returns>The parsed <see cref="VMDAnimation"/>.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="stream"/> is null.</exception>
         /// <exception cref="InvalidDataException">Thrown when the VMD signature is invalid.</exception>
-        public static async Awaitable<VMDAnimation> ReadAsync(UMTFrameBudget frameBudget, Stream stream)
+        public static async Task<VMDAnimation> ReadAsync(UMTFrameBudget frameBudget, Stream stream)
         {
             if (stream == null)
             {
@@ -204,7 +200,7 @@ namespace UMT
             return frames;
         }
 
-        private static async Awaitable<VMDBoneFrame[]> ReadBoneFramesAsync(UMTFrameBudget frameBudget, MMDBinaryReader reader)
+        private static async Task<VMDBoneFrame[]> ReadBoneFramesAsync(UMTFrameBudget frameBudget, MMDBinaryReader reader)
         {
             uint count = reader.ReadU32();
             VMDBoneFrame[] frames = new VMDBoneFrame[count];
@@ -239,7 +235,7 @@ namespace UMT
             return frames;
         }
 
-        private static async Awaitable<VMDMorphFrame[]> ReadMorphFramesAsync(UMTFrameBudget frameBudget, MMDBinaryReader reader)
+        private static async Task<VMDMorphFrame[]> ReadMorphFramesAsync(UMTFrameBudget frameBudget, MMDBinaryReader reader)
         {
             uint count = reader.ReadU32();
             VMDMorphFrame[] frames = new VMDMorphFrame[count];
@@ -272,7 +268,7 @@ namespace UMT
             return frames;
         }
 
-        private static async Awaitable<VMDCameraFrame[]> ReadCameraFramesAsync(UMTFrameBudget frameBudget, MMDBinaryReader reader)
+        private static async Task<VMDCameraFrame[]> ReadCameraFramesAsync(UMTFrameBudget frameBudget, MMDBinaryReader reader)
         {
             uint count = reader.ReadU32();
             VMDCameraFrame[] frames = new VMDCameraFrame[count];
@@ -309,7 +305,7 @@ namespace UMT
             return frames;
         }
 
-        private static async Awaitable<VMDLightFrame[]> ReadLightFramesAsync(UMTFrameBudget frameBudget, MMDBinaryReader reader)
+        private static async Task<VMDLightFrame[]> ReadLightFramesAsync(UMTFrameBudget frameBudget, MMDBinaryReader reader)
         {
             uint count = reader.ReadU32();
             VMDLightFrame[] frames = new VMDLightFrame[count];
@@ -342,7 +338,7 @@ namespace UMT
             return frames;
         }
 
-        private static async Awaitable<VMDSelfShadowFrame[]> ReadSelfShadowFramesAsync(UMTFrameBudget frameBudget, MMDBinaryReader reader)
+        private static async Task<VMDSelfShadowFrame[]> ReadSelfShadowFramesAsync(UMTFrameBudget frameBudget, MMDBinaryReader reader)
         {
             uint count = reader.ReadU32();
             VMDSelfShadowFrame[] frames = new VMDSelfShadowFrame[count];
@@ -375,7 +371,7 @@ namespace UMT
             return frames;
         }
 
-        private static async Awaitable<VMDShowIKFrame[]> ReadShowIKFramesAsync(UMTFrameBudget frameBudget, MMDBinaryReader reader)
+        private static async Task<VMDShowIKFrame[]> ReadShowIKFramesAsync(UMTFrameBudget frameBudget, MMDBinaryReader reader)
         {
             uint count = reader.ReadU32();
             VMDShowIKFrame[] frames = new VMDShowIKFrame[count];
@@ -454,15 +450,7 @@ namespace UMT
             return interpolation;
         }
 
-        private static void UpdateCameraMoveInterpolation(
-            byte[] rawInterpolation,
-            int startXIndex,
-            int startYIndex,
-            int endXIndex,
-            int endYIndex,
-            ref VMDBezierInterpolation interpolation,
-            ref int startDistance,
-            ref int endDistance)
+        private static void UpdateCameraMoveInterpolation(byte[] rawInterpolation, int startXIndex, int startYIndex, int endXIndex, int endYIndex, ref VMDBezierInterpolation interpolation, ref int startDistance, ref int endDistance)
         {
             int candidateStartDistance = GetDefaultControlPointSquaredDistance(rawInterpolation[startXIndex], rawInterpolation[startYIndex], 20);
             if (candidateStartDistance > startDistance)

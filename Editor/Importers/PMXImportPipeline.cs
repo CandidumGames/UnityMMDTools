@@ -45,8 +45,7 @@ namespace UMT.Editor
     }
 
     /// <summary>
-    /// Editor import and post-processing pipeline for PMX assets: loads UMT resources and registers the imported
-    /// objects (root, model, meshes, materials, avatar) with the asset import context.
+    /// Editor import and post-processing pipeline for PMX assets: loads UMT resources and registers the imported objects (root, model, meshes, materials, avatar) with the asset import context.
     /// </summary>
     public static class PMXImportPipeline
     {
@@ -65,13 +64,11 @@ namespace UMT.Editor
             string[] guids = AssetDatabase.FindAssets($"t:{nameof(UMTResources)}");
             if (guids.Length == 0)
             {
-                throw new FileNotFoundException(
-                    $"UMT import resources asset was not found. Run Tools/UMT/Create Default Import Resources to create {UMTResourcesMenu.k_DefaultAssetPath}.");
+                throw new FileNotFoundException($"UMT import resources asset was not found. Run Tools/UMT/Create Default Import Resources to create {UMTResourcesMenu.k_DefaultAssetPath}.");
             }
             if (guids.Length > 1)
             {
-                throw new InvalidOperationException(
-                    "Multiple UMT import resources assets were found. Keep exactly one project-wide resource asset.");
+                throw new InvalidOperationException("Multiple UMT import resources assets were found. Keep exactly one project-wide resource asset.");
             }
 
             string assetPath = AssetDatabase.GUIDToAssetPath(guids[0]);
@@ -85,16 +82,14 @@ namespace UMT.Editor
         }
 
         /// <summary>
-        /// Registers the objects produced by a completed PMX import with the asset import context and, optionally,
-        /// writes metadata and string-map debug files next to the source asset.
+        /// Registers the objects produced by a completed PMX import with the asset import context and, optionally, writes metadata and string-map debug files next to the source asset.
         /// </summary>
         /// <param name="importResult">Completed in-memory PMX import result to register.</param>
         /// <param name="pmxAssetPath">Project path of the source PMX asset.</param>
         /// <param name="ctx">Asset import context to add the generated objects to.</param>
         /// <param name="generateDebugData">When true, writes sibling metadata and string-map JSON debug files.</param>
         /// <returns>A summary of the import run.</returns>
-        public static PMXImportPipelineResult Import(PMXImportResult importResult, string pmxAssetPath,
-            AssetImportContext ctx, bool generateDebugData)
+        public static PMXImportPipelineResult Import(PMXImportResult importResult, string pmxAssetPath, AssetImportContext ctx, bool generateDebugData)
         {
             if (importResult == null)
             {

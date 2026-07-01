@@ -4,8 +4,7 @@ using UnityEditor.AssetImporters;
 namespace UMT.Editor
 {
     /// <summary>
-    /// Custom inspector for <see cref="PMXScriptedImporter"/> that splits the import options across
-    /// Model, Rig, Animation, and Materials tabs, each drawn by its own editor.
+    /// Custom inspector for <see cref="PMXScriptedImporter"/> that splits the import options across Model, Rig, Animation, and Materials tabs, each drawn by its own editor.
     /// </summary>
     [CustomEditor(typeof(PMXScriptedImporter))]
     public sealed class PMXScriptedImporterEditor : ScriptedImporterEditor

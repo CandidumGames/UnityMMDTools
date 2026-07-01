@@ -5,8 +5,7 @@ using UnityEngine;
 namespace UMT
 {
     /// <summary>
-    /// Per-joint PMX physics data attached to a generated joint object, linking two
-    /// <see cref="MMDRigidBody"/> instances for the native MMD Bullet physics pipeline.
+    /// Per-joint PMX physics data attached to a generated joint object, linking two <see cref="MMDRigidBody"/> instances for the native MMD Bullet physics pipeline.
     /// </summary>
     public sealed class MMDJoint : MonoBehaviour
     {
@@ -43,7 +42,9 @@ namespace UMT
         /// <summary>Rotation spring stiffness per axis.</summary>
         public float3 springRotation;
 
-        /// <summary>Native joint data marshalled to the Bullet physics plugin, rebuilt by <see cref="InitializeRuntimeData"/>.</summary>
+        /// <summary>
+        /// Native joint data marshalled to the Bullet physics plugin, rebuilt by <see cref="InitializeRuntimeData"/>.
+        /// </summary>
         [NonSerialized] public MMDBulletPhysics.NativeJointData runtimeData;
 
         /// <summary>
@@ -53,11 +54,7 @@ namespace UMT
         /// <param name="joint">Source PMX joint data.</param>
         /// <param name="firstRigidBody">Resolved first rigid body component.</param>
         /// <param name="secondRigidBody">Resolved second rigid body component.</param>
-        public void SetData(
-            int index,
-            PMXJoint joint,
-            MMDRigidBody firstRigidBody,
-            MMDRigidBody secondRigidBody)
+        public void SetData(int index, PMXJoint joint, MMDRigidBody firstRigidBody, MMDRigidBody secondRigidBody)
         {
             jointIndex = index;
             renamedName = joint.renamedName.ToString();
@@ -78,9 +75,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Builds the native <see cref="MMDBulletPhysics.NativeJointData"/> from this joint's data,
-        /// computing the joint frames relative to each rigid body's initial world transform and
-        /// scaling angular spring stiffness into Unity units.
+        /// Builds the native <see cref="MMDBulletPhysics.NativeJointData"/> from this joint's data, computing the joint frames relative to each rigid body's initial world transform and scaling angular spring stiffness into Unity units.
         /// </summary>
         /// <exception cref="NotSupportedException">Thrown when <see cref="type"/> is not a 6DOF joint type.</exception>
         /// <exception cref="InvalidOperationException">Thrown when either connected rigid body is missing.</exception>
@@ -99,10 +94,7 @@ namespace UMT
                 throw new InvalidOperationException($"MMD joint {jointIndex} does not reference its second rigid body.");
             }
 
-            float4x4 jointWorld = float4x4.TRS(
-                position,
-                quaternion.EulerZXY(rotation),
-                new float3(1.0f, 1.0f, 1.0f));
+            float4x4 jointWorld = float4x4.TRS(position, quaternion.EulerZXY(rotation), new float3(1.0f, 1.0f, 1.0f));
             runtimeData = new MMDBulletPhysics.NativeJointData
             {
                 type = type,
@@ -115,10 +107,7 @@ namespace UMT
                 rotationLimitMin = rotationLimitMin,
                 rotationLimitMax = rotationLimitMax,
                 springTranslation = springTranslation,
-                springRotation = new float3(
-                    ScaleAngularSpring(springRotation.x),
-                    ScaleAngularSpring(springRotation.y),
-                    ScaleAngularSpring(springRotation.z)),
+                springRotation = new float3(ScaleAngularSpring(springRotation.x), ScaleAngularSpring(springRotation.y), ScaleAngularSpring(springRotation.z)),
             };
         }
 
@@ -136,8 +125,7 @@ namespace UMT
         private const float k_AxisLength = 0.02f;
 
         /// <summary>
-        /// Draws the joint as a small coordinate cross at its transform plus faded lines to the two
-        /// connected rigid bodies, when the object is selected.
+        /// Draws the joint as a small coordinate cross at its transform plus faded lines to the two connected rigid bodies, when the object is selected.
         /// </summary>
         private void OnDrawGizmosSelected()
         {

@@ -6,8 +6,7 @@ using UnityEngine;
 namespace UMT
 {
     /// <summary>
-    /// Per-rigid-body PMX physics data attached to either a related bone or a generated
-    /// rigid-body owner object, feeding the native MMD Bullet physics pipeline.
+    /// Per-rigid-body PMX physics data attached to either a related bone or a generated rigid-body owner object, feeding the native MMD Bullet physics pipeline.
     /// </summary>
     public sealed class MMDRigidBody : MonoBehaviour
     {
@@ -47,8 +46,7 @@ namespace UMT
         public PMXRigidBody.Mode mode;
 
         /// <summary>
-        /// Blittable rigid-body simulation data marshalled to the native Bullet plugin.
-        /// Field order is layout-critical and must stay in sync with the native struct; do not reorder.
+        /// Blittable rigid-body simulation data marshalled to the native Bullet plugin. Field order is layout-critical and must stay in sync with the native struct; do not reorder.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
         public struct RigidBodySimulationData
@@ -95,7 +93,9 @@ namespace UMT
             public int boneTransformLevel;
         }
 
-        /// <summary>Native simulation data for this rigid body, populated by <see cref="InitializeRuntimeData"/>.</summary>
+        /// <summary>
+        /// Native simulation data for this rigid body, populated by <see cref="InitializeRuntimeData"/>.
+        /// </summary>
         [NonSerialized] public RigidBodySimulationData runtimeData;
 
         /// <summary>
@@ -126,8 +126,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Populates <see cref="runtimeData"/> from this component's serialized fields and the
-        /// related bone's initial model position and transform level.
+        /// Populates <see cref="runtimeData"/> from this component's serialized fields and the related bone's initial model position and transform level.
         /// </summary>
         public void InitializeRuntimeData()
         {
@@ -171,8 +170,7 @@ namespace UMT
         private static readonly Color k_DynamicBoneAlignedColor = new Color(1.0f, 0.5f, 0.0f, 1.0f);
 
         /// <summary>
-        /// Draws the collider shape as a wireframe gizmo in this rigid body's own transform space,
-        /// color-coded by physics mode, when the object is selected.
+        /// Draws the collider shape as a wireframe gizmo in this rigid body's own transform space, color-coded by physics mode, when the object is selected.
         /// </summary>
         private void OnDrawGizmosSelected()
         {
@@ -206,8 +204,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Draws a capsule wireframe centered at the local origin along the local Y axis, with the
-        /// given hemisphere radius and cylinder height, using the current <see cref="Gizmos.matrix"/>.
+        /// Draws a capsule wireframe centered at the local origin along the local Y axis, with the given hemisphere radius and cylinder height, using the current <see cref="Gizmos.matrix"/>.
         /// </summary>
         private static void DrawWireCapsule(float radius, float cylinderHeight)
         {
@@ -235,8 +232,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Draws a wireframe arc of <paramref name="sweepDegrees"/> in the plane spanned by
-        /// <paramref name="axisA"/> and <paramref name="axisB"/>, starting along <paramref name="axisA"/>.
+        /// Draws a wireframe arc of <paramref name="sweepDegrees"/> in the plane spanned by <paramref name="axisA"/> and <paramref name="axisB"/>, starting along <paramref name="axisA"/>.
         /// </summary>
         private static void DrawWireArc(Vector3 center, float radius, Vector3 axisA, Vector3 axisB, float sweepDegrees)
         {

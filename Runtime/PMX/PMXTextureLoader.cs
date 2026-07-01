@@ -7,12 +7,13 @@ using UnityEngine;
 namespace UMT
 {
     /// <summary>
-    /// Loads PMX textures from disk into a texture-index map, decoding PNG/JPG via Unity and TGA/BMP via the
-    /// bundled loaders, caching each resolved file so it is decoded only once.
+    /// Loads PMX textures from disk into a texture-index map, decoding PNG/JPG via Unity and TGA/BMP via the bundled loaders, caching each resolved file so it is decoded only once.
     /// </summary>
     public static class PMXTextureLoader
     {
-        /// <summary>Loads every PMX texture once into an array indexed by PMX texture index.</summary>
+        /// <summary>
+        /// Loads every PMX texture once into an array indexed by PMX texture index.
+        /// </summary>
         /// <param name="model">PMX model providing relative texture paths.</param>
         /// <param name="options">Import options providing the texture base directory and source path.</param>
         /// <param name="result">Import result that collects created textures and warnings.</param>
@@ -92,9 +93,7 @@ namespace UMT
 
         private static string ResolveTexturePath(string texturePath, PMXImportOptions options)
         {
-            string baseDirectory = !string.IsNullOrEmpty(options.textureBaseDirectory)
-                ? options.textureBaseDirectory
-                : Path.GetDirectoryName(options.sourcePath);
+            string baseDirectory = !string.IsNullOrEmpty(options.textureBaseDirectory) ? options.textureBaseDirectory : Path.GetDirectoryName(options.sourcePath);
             if (string.IsNullOrEmpty(baseDirectory) || !Directory.Exists(baseDirectory))
             {
                 return null;

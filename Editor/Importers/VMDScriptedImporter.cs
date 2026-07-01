@@ -6,8 +6,7 @@ using UnityEditor.AssetImporters;
 namespace UMT.Editor
 {
     /// <summary>
-    /// Unity <see cref="ScriptedImporter"/> for <c>.vmd</c> assets that parses the motion data into a
-    /// <see cref="VMDAnimation"/> main object.
+    /// Unity <see cref="ScriptedImporter"/> for <c>.vmd</c> assets that parses the motion data into a <see cref="VMDAnimation"/> main object.
     /// </summary>
     [ScriptedImporter(1, new[] { "vmd" })]
     public sealed class VMDScriptedImporter : ScriptedImporter

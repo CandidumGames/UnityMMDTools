@@ -13,16 +13,12 @@ namespace UMT
 
         private static bool CanWritePositionCurves(PMXModel model, int boneIndex)
         {
-            return boneIndex >= 0 &&
-                boneIndex < model.bones.Length &&
-                (model.bones[boneIndex].flags & PMXBone.Flags.Translatable) != 0;
+            return boneIndex >= 0 && boneIndex < model.bones.Length && (model.bones[boneIndex].flags & PMXBone.Flags.Translatable) != 0;
         }
 
         private static bool CanWriteRotationCurves(PMXModel model, int boneIndex)
         {
-            return boneIndex >= 0 &&
-                boneIndex < model.bones.Length &&
-                (model.bones[boneIndex].flags & PMXBone.Flags.Rotatable) != 0;
+            return boneIndex >= 0 && boneIndex < model.bones.Length && (model.bones[boneIndex].flags & PMXBone.Flags.Rotatable) != 0;
         }
 
         private static uint GetLastBoneFrame(VMDAnimation animation)
@@ -85,12 +81,7 @@ namespace UMT
             quaternion frameRotation = new quaternion(frame.rotation.value.x, frame.rotation.value.y, frame.rotation.value.z, frame.rotation.value.w);
             AnimationMath.ConvertPosition(in framePosition, out float3 convertedPosition);
             AnimationMath.ConvertRotation(in frameRotation, out quaternion convertedRotation);
-            return new BoneSample(
-                frame.frame,
-                initialLocalPosition + convertedPosition,
-                math.normalize(math.mul(convertedRotation, initialLocalRotation)),
-                true,
-                frame.interpolation);
+            return new BoneSample(frame.frame, initialLocalPosition + convertedPosition, math.normalize(math.mul(convertedRotation, initialLocalRotation)), true, frame.interpolation);
         }
 
         private static Keyframe SteppedKeyframe(float time, float value)

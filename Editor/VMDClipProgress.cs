@@ -3,13 +3,13 @@ using UnityEditor;
 namespace UMT.Editor
 {
     /// <summary>
-    /// Shared editor progress-bar reporting for VMD-to-<see cref="UnityEngine.AnimationClip"/> conversion,
-    /// translating <see cref="VMDAnimationClipConverter.Stage"/> updates into
-    /// <see cref="EditorUtility.DisplayProgressBar(string, string, float)"/> calls.
+    /// Shared editor progress-bar reporting for VMD-to-<see cref="UnityEngine.AnimationClip"/> conversion, translating <see cref="VMDAnimationClipConverter.Stage"/> updates into <see cref="EditorUtility.DisplayProgressBar(string, string, float)"/> calls.
     /// </summary>
     internal static class VMDClipProgress
     {
-        /// <summary>Displays or updates the conversion progress bar for a single stage update.</summary>
+        /// <summary>
+        /// Displays or updates the conversion progress bar for a single stage update.
+        /// </summary>
         /// <param name="title">Progress bar window title.</param>
         /// <param name="itemLabel">Optional per-item label (for example the clip name) prefixed to the status text.</param>
         /// <param name="stage">Current conversion stage.</param>

@@ -1,0 +1,152 @@
+// SDEF (Spherical Deform) GPU skinning for Unity MMD Tools (UMT).
+//
+// Owns the full deformation of a generated mesh that contains at least one SDEF vertex: vertex-morph blend shapes, then bone skinning (linear blend skinning for BDEF1/2/4 vertices and the SDEF formula for SDEF vertices). Reads the bind-pose source mesh buffer and writes the final skinned vertex into the SkinnedMeshRenderer's GPU output buffer. Both buffers use the fixed float32 layout the mesh builder forces on SDEF meshes (Position @ _PositionOffset, Normal @ _NormalOffset, UV @ _UVOffset).
+
+#pragma kernel CSSkin
+
+// Per-vertex skinning data; layout matches the C# SDEFVertexData struct (every member is 16 bytes).
+struct SDEFVertexData
+{
+    int4   boneIndices;   // boneIndex0, boneIndex1, boneIndex2, boneIndex3 (-1 padded)
+    float4 boneWeights;   // weight0..weight3 (LBS normalized; SDEF uses weight0,weight1)
+    float4 sdefC;         // .xyz center, .w deform type (0 = LBS, 1 = SDEF)
+    float4 sdefR0;        // corrected R0' in .xyz
+    float4 sdefR1;        // corrected R1' in .xyz
+};
+
+ByteAddressBuffer                   _SourceVertices;    // bind pose (Mesh.GetVertexBuffer(0))
+RWByteAddressBuffer                 _DestVertices;      // skinned output (SkinnedMeshRenderer.GetVertexBuffer())
+StructuredBuffer<SDEFVertexData>    _VertexData;        // per-vertex, uploaded once
+StructuredBuffer<float4x4>          _BoneMatrices;      // per-frame: boneWorldMatrix * bindpose
+StructuredBuffer<float4>            _BoneQuaternions;   // per-frame: rotation of each skinning matrix (xyzw)
+StructuredBuffer<float>             _MorphWeights;      // per-frame: 0..1 weight per morph slot
+ByteAddressBuffer                   _MorphOffsets;      // morph table contributions
+StructuredBuffer<int2>              _MorphRanges;       // per-vertex (start, count) into _MorphOffsets
+
+uint _VertexCount;
+// The bind-pose source mesh buffer (authored, interleaved) and the skinned destination buffer (Unity's deformed stream) can have different strides; both carry position and normal at the same offsets.
+uint _SourceStride;
+uint _DestStride;
+uint _PositionOffset;
+uint _NormalOffset;
+uint _HasTangent;
+uint _TangentOffset;
+
+// Rotates a vector by a unit quaternion (q.xyz = axis*sin, q.w = cos).
+float3 Rotate(float4 q, float3 v)
+{
+    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+}
+
+// Spherical linear interpolation of two unit quaternions, with shortest-path sign flip and an nlerp fallback when the inputs are nearly parallel (avoids division by a near-zero sin angle).
+float4 Slerp(float4 a, float4 boneIndex, float t)
+{
+    float d = dot(a, boneIndex);
+    if (d < 0.0)
+    {
+        boneIndex = -boneIndex;
+        d = -d;
+    }
+
+    if (d > 0.9995)
+    {
+        return normalize(lerp(a, boneIndex, t));
+    }
+
+    float theta = acos(clamp(d, -1.0, 1.0));
+    float sinTheta = sin(theta);
+    float wa = sin((1.0 - t) * theta) / sinTheta;
+    float wb = sin(t * theta) / sinTheta;
+    return normalize(a * wa + boneIndex * wb);
+}
+
+[numthreads(64, 1, 1)]
+void CSSkin(uint3 id : SV_DispatchThreadID)
+{
+    uint vertexIndex = id.x;
+    if (vertexIndex >= _VertexCount)
+    {
+        return;
+    }
+
+    uint sourceBase = vertexIndex * _SourceStride;
+    float3 position = asfloat(_SourceVertices.Load3(sourceBase + _PositionOffset));
+    float3 normal = asfloat(_SourceVertices.Load3(sourceBase + _NormalOffset));
+
+    // Morph in bind-pose space, before skinning. Normals are not morphed (matches the blend-shape import).
+    int2 range = _MorphRanges[vertexIndex];
+    for (int k = 0; k < range.y; ++k)
+    {
+        uint4 entry = _MorphOffsets.Load4((range.x + k) * 16);
+        float3 delta = asfloat(entry.xyz);
+        uint morphSlot = entry.w;
+        position += _MorphWeights[morphSlot] * delta;
+    }
+
+    SDEFVertexData vertexData = _VertexData[vertexIndex];
+
+    float3 outPosition;
+    float3 outNormal;
+    float4 deformQuaternion;
+
+    if (vertexData.sdefC.w > 0.5)
+    {
+        // SDEF path
+        float weight0 = vertexData.boneWeights.x;
+        float weight1 = vertexData.boneWeights.y;
+        int boneIndex0 = vertexData.boneIndices.x;
+        int boneIndex1 = vertexData.boneIndices.y;
+        float4x4 boneMatrix0 = _BoneMatrices[boneIndex0];
+        float4x4 boneMatrix1 = _BoneMatrices[boneIndex1];
+
+        float3 center = vertexData.sdefC.xyz;
+        float3 weightedRotation0 = mul(boneMatrix0, float4(vertexData.sdefR0.xyz, 1.0)).xyz;
+        float3 weightedRotation1 = mul(boneMatrix1, float4(vertexData.sdefR1.xyz, 1.0)).xyz;
+        float3 weightedRotation = weightedRotation0 * weight0 + weightedRotation1 * weight1;
+
+        float3 weightedPosition0 = mul(boneMatrix0, float4(center, 1.0)).xyz;
+        float3 weightedPosition1 = mul(boneMatrix1, float4(center, 1.0)).xyz;
+        float3 translation = (weightedPosition0 - center) * weight0 + (weightedPosition1 - center) * weight1;
+        float3 weightedPosition = center + translation;
+        float3 finalPosition = (weightedPosition + weightedRotation) * 0.5;
+
+        deformQuaternion = Slerp(_BoneQuaternions[boneIndex0], _BoneQuaternions[boneIndex1], weight1);
+        outPosition = Rotate(deformQuaternion, position - center) + finalPosition;
+        outNormal = Rotate(deformQuaternion, normal);
+    }
+    else
+    {
+        // Linear blend skinning path (BDEF1/2/4). Accumulate into separate variables so the morphed bind-pose position/normal keep feeding every bone.
+        float3 skinnedPosition = float3(0.0, 0.0, 0.0);
+        float3 skinnedNormal = float3(0.0, 0.0, 0.0);
+        [unroll]
+        for (int i = 0; i < 4; ++i)
+        {
+            int boneIndex = vertexData.boneIndices[i];
+            float w = vertexData.boneWeights[i];
+            if (w <= 0.0 || boneIndex < 0)
+            {
+                continue;
+            }
+            skinnedPosition += w * mul(_BoneMatrices[boneIndex], float4(position, 1.0)).xyz;
+            skinnedNormal += w * Rotate(_BoneQuaternions[boneIndex], normal);
+        }
+        outPosition = skinnedPosition;
+        outNormal = skinnedNormal;
+        // The dominant bone's rotation skins the tangent for LBS vertices.
+        int dominant = vertexData.boneIndices.x >= 0 ? vertexData.boneIndices.x : 0;
+        deformQuaternion = _BoneQuaternions[dominant];
+    }
+
+    // The skinned destination buffer is Unity's deformed stream: it holds position and normal (and tangent when present), but NOT UV, which lives in a separate static stream we must not touch. Write only the deformed attributes, at the destination stride.
+    uint destBase = vertexIndex * _DestStride;
+    _DestVertices.Store3(destBase + _PositionOffset, asuint(outPosition));
+    _DestVertices.Store3(destBase + _NormalOffset, asuint(normalize(outNormal)));
+
+    if (_HasTangent != 0)
+    {
+        float4 tangent = asfloat(_SourceVertices.Load4(sourceBase + _TangentOffset));
+        float3 rotatedTangent = Rotate(deformQuaternion, tangent.xyz);
+        _DestVertices.Store4(destBase + _TangentOffset, asuint(float4(rotatedTangent, tangent.w)));
+    }
+}

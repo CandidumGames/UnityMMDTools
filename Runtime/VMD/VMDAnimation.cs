@@ -7,9 +7,7 @@ using UnityEngine;
 namespace UMT
 {
     /// <summary>
-    /// Parsed MikuMikuDance VMD (Vocaloid Motion Data) animation stored as a Unity <see cref="ScriptableObject"/>.
-    /// Holds the model name, format version, and the bone, morph, camera, light, self-shadow, and show/IK frame tracks
-    /// produced by <see cref="VMDReader"/>.
+    /// Parsed MikuMikuDance VMD (Vocaloid Motion Data) animation stored as a Unity <see cref="ScriptableObject"/>. Holds the model name, format version, and the bone, morph, camera, light, self-shadow, and show/IK frame tracks produced by <see cref="VMDReader"/>.
     /// </summary>
     public sealed class VMDAnimation : ScriptableObject
     {
@@ -18,10 +16,14 @@ namespace UMT
         /// </summary>
         public enum Version : byte
         {
-            /// <summary>Version 1 VMD signature ("Vocaloid Motion Data file").</summary>
+            /// <summary>
+            /// Version 1 VMD signature ("Vocaloid Motion Data file").
+            /// </summary>
             V1,
 
-            /// <summary>Version 2 VMD signature ("Vocaloid Motion Data 0002").</summary>
+            /// <summary>
+            /// Version 2 VMD signature ("Vocaloid Motion Data 0002").
+            /// </summary>
             V2,
         }
 
@@ -59,8 +61,7 @@ namespace UMT
     }
 
     /// <summary>
-    /// A single cubic Bezier interpolation curve defined by its two control points, as stored in a VMD frame.
-    /// Control point coordinates are normalized to the 0..1 range.
+    /// A single cubic Bezier interpolation curve defined by its two control points, as stored in a VMD frame. Control point coordinates are normalized to the 0..1 range.
     /// </summary>
     [Serializable]
     public struct VMDBezierInterpolation
@@ -79,8 +80,7 @@ namespace UMT
     }
 
     /// <summary>
-    /// Per-channel Bezier interpolation for a VMD bone keyframe, with separate curves for each
-    /// position axis and rotation.
+    /// Per-channel Bezier interpolation for a VMD bone keyframe, with separate curves for each position axis and rotation.
     /// </summary>
     [Serializable]
     public struct VMDBoneInterpolation
@@ -118,8 +118,7 @@ namespace UMT
     }
 
     /// <summary>
-    /// A single VMD bone keyframe: target bone name, frame number, local position/rotation offset, and interpolation.
-    /// Position is converted to Unity space during parsing.
+    /// A single VMD bone keyframe: target bone name, frame number, local position/rotation offset, and interpolation. Position is converted to Unity space during parsing.
     /// </summary>
     [Serializable]
     public struct VMDBoneFrame
@@ -157,8 +156,7 @@ namespace UMT
     }
 
     /// <summary>
-    /// A single VMD camera keyframe: frame number, distance, target position, rotation, interpolation,
-    /// view angle (FOV), and perspective toggle.
+    /// A single VMD camera keyframe: frame number, distance, target position, rotation, interpolation, view angle (FOV), and perspective toggle.
     /// </summary>
     [Serializable]
     public struct VMDCameraFrame

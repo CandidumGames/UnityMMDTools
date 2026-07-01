@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace UMT
@@ -80,14 +81,10 @@ namespace UMT
         /// </summary>
         public readonly struct Record
         {
-            /// <summary>
-            /// The label identifying the measured block.
-            /// </summary>
+            /// <summary>The label identifying the measured block.</summary>
             public readonly string label;
 
-            /// <summary>
-            /// The elapsed duration of the measured block.
-            /// </summary>
+            /// <summary>The elapsed duration of the measured block.</summary>
             public readonly TimeSpan elapsed;
 
             /// <summary>
@@ -172,8 +169,7 @@ namespace UMT
         /// <summary>
         /// Initializes a new instance of the <see cref="UMTFrameBudget"/> class with the specified time budget in milliseconds.
         /// </summary>
-        /// <param name="budgetMs">The time budget in milliseconds. If the elapsed time
-        /// exceeds this value, the next call to <see cref="YieldIfNeeded"/> will yield control back to the Unity main thread.</param>
+        /// <param name="budgetMs">The time budget in milliseconds. If the elapsed time exceeds this value, the next call to <see cref="YieldIfNeeded"/> will yield control back to the Unity main thread.</param>
         public UMTFrameBudget(double budgetMs)
         {
             m_BudgetMs = budgetMs;
@@ -183,14 +179,17 @@ namespace UMT
         /// <summary>
         /// Yields control back to the Unity main thread if the elapsed time exceeds the specified budget.
         /// </summary>
-        public async Awaitable YieldIfNeeded()
+        public async Task YieldIfNeeded()
         {
             if (m_Stopwatch.Elapsed.TotalMilliseconds < m_BudgetMs)
             {
                 return;
             }
-
+#if UNITY_2023_1_OR_NEWER
             await Awaitable.NextFrameAsync();
+#else
+            await Task.Yield();
+#endif
             m_Stopwatch.Restart();
         }
     }

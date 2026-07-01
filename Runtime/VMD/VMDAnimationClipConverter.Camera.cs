@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -18,10 +19,7 @@ namespace UMT
         public const string k_DefaultCameraChildName = "Camera";
 
         /// <summary>
-        /// Converts the camera section of a VMD animation into an <see cref="AnimationClip"/> for a two-node camera
-        /// rig. The clip root carries the camera center (look-at target) movement and orientation, and a child
-        /// transform named <paramref name="cameraChildName"/> is offset along its local Z axis by the camera distance
-        /// and carries the <see cref="Camera"/> field-of-view curve.
+        /// Converts the camera section of a VMD animation into an <see cref="AnimationClip"/> for a two-node camera rig. The clip root carries the camera center (look-at target) movement and orientation, and a child transform named <paramref name="cameraChildName"/> is offset along its local Z axis by the camera distance and carries the <see cref="Camera"/> field-of-view curve.
         /// </summary>
         /// <param name="animation">The parsed VMD animation whose camera frames are converted.</param>
         /// <param name="frameRate">Frames per second of the generated clip. The native 30 fps VMD timeline is sub-sampled when this is a higher integer multiple (60 or 120), preserving the clip's real-time duration.</param>
@@ -31,11 +29,7 @@ namespace UMT
         /// <returns>The generated <see cref="VMDCameraClipData"/>.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="animation"/> is null.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the VMD animation contains no camera frames.</exception>
-        public static VMDCameraClipData ConvertCamera(
-            VMDAnimation animation,
-            float frameRate = 30.0f,
-            Action<string, TimeSpan> timingCallback = null,
-            ProgressCallback progress = null)
+        public static VMDCameraClipData ConvertCamera(VMDAnimation animation, float frameRate = 30.0f, Action<string, TimeSpan> timingCallback = null, ProgressCallback progress = null)
         {
             if (animation == null)
             {
@@ -59,12 +53,7 @@ namespace UMT
 
             using (UMTTiming.Measure(timingCallback, "Camera Conversion"))
             {
-                AnimationMath.BakeCameraFrames(
-                    in sortedFrames,
-                    frameCount,
-                    MMDConstants.k_MMDUnitToUnityUnit,
-                    frameRate,
-                    ref buffers);
+                AnimationMath.BakeCameraFrames(in sortedFrames, frameCount, MMDConstants.k_MMDUnitToUnityUnit, frameRate, ref buffers);
 
                 FillCameraClipData(cameraData, in buffers);
             }
@@ -79,10 +68,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Asynchronously converts the camera section of a VMD animation into an <see cref="AnimationClip"/> for a two-node camera
-        /// rig. The clip root carries the camera center (look-at target) movement and orientation, and a child
-        /// transform named <paramref name="cameraChildName"/> is offset along its local Z axis by the camera distance
-        /// and carries the <see cref="Camera"/> field-of-view curve.
+        /// Asynchronously converts the camera section of a VMD animation into an <see cref="AnimationClip"/> for a two-node camera rig. The clip root carries the camera center (look-at target) movement and orientation, and a child transform named <paramref name="cameraChildName"/> is offset along its local Z axis by the camera distance and carries the <see cref="Camera"/> field-of-view curve.
         /// </summary>
         /// <param name="frameBudget">Frame budget for yielding.</param>
         /// <param name="animation">The parsed VMD animation whose camera frames are converted.</param>
@@ -93,12 +79,7 @@ namespace UMT
         /// <returns>The generated <see cref="VMDCameraClipData"/>.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="animation"/> is null.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the VMD animation contains no camera frames.</exception>
-        public static async Awaitable<VMDCameraClipData> ConvertCameraAsync(
-            UMTFrameBudget frameBudget,
-            VMDAnimation animation,
-            float frameRate = 30.0f,
-            Action<string, TimeSpan> timingCallback = null,
-            ProgressCallback progress = null)
+        public static async Task<VMDCameraClipData> ConvertCameraAsync(UMTFrameBudget frameBudget, VMDAnimation animation, float frameRate = 30.0f, Action<string, TimeSpan> timingCallback = null, ProgressCallback progress = null)
         {
             if (animation == null)
             {
@@ -123,12 +104,7 @@ namespace UMT
 
             using (UMTTiming.Measure(timingCallback, "Camera Conversion"))
             {
-                AnimationMath.BakeCameraFrames(
-                    in sortedFrames,
-                    frameCount,
-                    MMDConstants.k_MMDUnitToUnityUnit,
-                    frameRate,
-                    ref buffers);
+                AnimationMath.BakeCameraFrames(in sortedFrames, frameCount, MMDConstants.k_MMDUnitToUnityUnit, frameRate, ref buffers);
                 await frameBudget.YieldIfNeeded();
 
                 FillCameraClipData(cameraData, in buffers);

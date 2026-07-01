@@ -4,8 +4,7 @@ using System.Collections.Generic;
 namespace UMT
 {
     /// <summary>
-    /// Options controlling how a <see cref="VMDAnimation"/> is converted into a Unity <see cref="UnityEngine.AnimationClip"/>
-    /// by <see cref="VMDAnimationClipConverter"/>.
+    /// Options controlling how a <see cref="VMDAnimation"/> is converted into a Unity <see cref="UnityEngine.AnimationClip"/> by <see cref="VMDAnimationClipConverter"/>.
     /// </summary>
     public sealed class VMDAnimationClipOptions
     {

@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Unity.Collections;
 using UnityEngine;
 
@@ -7,32 +8,17 @@ namespace UMT
     public static partial class VMDAnimationClipConverter
     {
 
-        private static void AddBakedBoneCurves(
-            VMDClipData bones,
-            VMDAnimation animation,
-            ref MMDTransformManager.SolverContext transformContext,
-            ref MMDPhysicsManager.PhysicsSolverContext physicsContext,
-            string[] bonePaths,
-            bool bakePhysics,
-            ref IndexResolver resolver,
-            VMDAnimationClipOptions options,
-            ProgressCallback progress)
+        private static void AddBakedBoneCurves(VMDClipData bones, VMDAnimation animation, ref MMDTransformManager.SolverContext transformContext, ref MMDPhysicsManager.PhysicsSolverContext physicsContext, string[] bonePaths, bool bakePhysics, ref IndexResolver resolver, VMDAnimationClipOptions options, ProgressCallback progress)
         {
-            int setupFrameCount = bakePhysics && options.physicsWarmUpDuration > 0.0f
-                ? Mathf.Max(0, Mathf.RoundToInt(options.physicsWarmUpDuration * options.frameRate))
-                : 0;
+            int setupFrameCount = bakePhysics && options.physicsWarmUpDuration > 0.0f ? Mathf.Max(0, Mathf.RoundToInt(options.physicsWarmUpDuration * options.frameRate)) : 0;
 
             uint lastFrame = GetLastBakeFrame(animation);
             int frameCount = checked((int)lastFrame + 1);
-            ref NativeArray<MMDBoneTransform.BoneSolverData> boneSolverData =
-                ref transformContext.boneSolverData;
+            ref NativeArray<MMDBoneTransform.BoneSolverData> boneSolverData = ref transformContext.boneSolverData;
 
-            ref NativeArray<int> ikControllerByBoneIndices =
-                ref transformContext.ikControllerByBoneIndices;
-            ref NativeArray<MMDTransformManager.IKControllerData> ikControllers =
-                ref transformContext.ikControllers;
-            ref NativeArray<MMDTransformManager.IKLinkData> ikLinks =
-                ref transformContext.ikLinks;
+            ref NativeArray<int> ikControllerByBoneIndices = ref transformContext.ikControllerByBoneIndices;
+            ref NativeArray<MMDTransformManager.IKControllerData> ikControllers = ref transformContext.ikControllers;
+            ref NativeArray<MMDTransformManager.IKLinkData> ikLinks = ref transformContext.ikLinks;
             int boneCount = boneSolverData.Length;
             ReportProgress(progress, Stage.BoneConversion, 0, frameCount);
 
@@ -44,55 +30,21 @@ namespace UMT
             NativeList<int> sourceBoneIndices = new NativeList<int>(Allocator.Persistent);
             NativeList<int> curveBoneIndices = new NativeList<int>(Allocator.Persistent);
             NativeList<ResolvedBoneFrame> resolvedBoneFrames = BuildSortedResolvedBoneFrames(animation, ref resolver, in boneSolverData, boneCount, frameCount, Allocator.Persistent);
-            AnimationMath.BuildSourceBoneTracks(
-                in resolvedBoneFrames,
-                ref sourceBoneSelection,
-                ref sourceTrackIndexByBone,
-                ref sourceBoneIndices);
+            AnimationMath.BuildSourceBoneTracks(in resolvedBoneFrames, ref sourceBoneSelection, ref sourceTrackIndexByBone, ref sourceBoneIndices);
             NativeArray<BoneSample> boneSamples = new NativeArray<BoneSample>(checked(sourceBoneIndices.Length * frameCount), Allocator.Persistent);
-            AnimationMath.FillCompactBoneSamples(
-                in resolvedBoneFrames,
-                in sourceTrackIndexByBone,
-                ref boneSamples,
-                frameCount);
-            AnimationMath.InterpolateCompactBoneSamples(
-                in boneSolverData,
-                in sourceBoneIndices,
-                ref boneSamples,
-                frameCount,
-                ref lastFrameWithSampleByBone);
+            AnimationMath.FillCompactBoneSamples(in resolvedBoneFrames, in sourceTrackIndexByBone, ref boneSamples, frameCount);
+            AnimationMath.InterpolateCompactBoneSamples(in boneSolverData, in sourceBoneIndices, ref boneSamples, frameCount, ref lastFrameWithSampleByBone);
 
             NativeList<ResolvedIKToggleFrame> resolvedIKToggleFrames = BuildSortedResolvedIKToggleFrames(animation, ref resolver, in ikControllerByBoneIndices, boneCount, frameCount, Allocator.Persistent);
             NativeList<int> ikBoneIndices = new NativeList<int>(Allocator.Persistent);
             NativeArray<int> ikTrackIndexByBone = new NativeArray<int>(boneCount, Allocator.Persistent);
-            AnimationMath.BuildIKToggleTracks(
-                in resolvedIKToggleFrames,
-                ref ikTrackIndexByBone,
-                ref ikBoneIndices);
+            AnimationMath.BuildIKToggleTracks(in resolvedIKToggleFrames, ref ikTrackIndexByBone, ref ikBoneIndices);
             NativeArray<IKToggleFrameSample> ikSamplesByTrack = new NativeArray<IKToggleFrameSample>(checked(ikBoneIndices.Length * frameCount), Allocator.Persistent);
-            AnimationMath.FillCompactIKToggleSamples(
-                in resolvedIKToggleFrames,
-                in ikTrackIndexByBone,
-                ref ikSamplesByTrack,
-                frameCount);
+            AnimationMath.FillCompactIKToggleSamples(in resolvedIKToggleFrames, in ikTrackIndexByBone, ref ikSamplesByTrack, frameCount);
 
-            MMDPhysicsManager.BuildPhysicsControlledBoneSelection(
-                in physicsContext,
-                ref physicsControlledBoneSelection);
+            MMDPhysicsManager.BuildPhysicsControlledBoneSelection(in physicsContext, ref physicsControlledBoneSelection);
 
-            AnimationMath.ResolveBakedCurveBones(
-                in boneSolverData,
-                in sourceBoneSelection,
-                in ikControllerByBoneIndices,
-                in ikControllers,
-                in ikLinks,
-                in physicsControlledBoneSelection,
-                ref curveBoneSelection,
-                ref lastFrameWithSampleByBone,
-                ref curveBoneIndices,
-                boneCount,
-                checked((int)lastFrame),
-                bakePhysics);
+            AnimationMath.ResolveBakedCurveBones(in boneSolverData, in sourceBoneSelection, in ikControllerByBoneIndices, in ikControllers, in ikLinks, in physicsControlledBoneSelection, ref curveBoneSelection, ref lastFrameWithSampleByBone, ref curveBoneIndices, boneCount, checked((int)lastFrame), bakePhysics);
 
             int simLastFrame = checked((int)lastFrame);
             if (setupFrameCount > 0)
@@ -101,25 +53,12 @@ namespace UMT
                 int simFrameCount = setupFrameCount + frameCount;
 
                 NativeArray<BoneSample> combinedBoneSamples = new NativeArray<BoneSample>(checked(sourceBoneIndices.Length * simFrameCount), Allocator.Persistent);
-                AnimationMath.PrependSetupBoneSamples(
-                    in boneSolverData,
-                    in sourceBoneIndices,
-                    in boneSamples,
-                    ref combinedBoneSamples,
-                    sourceFrameCount,
-                    setupFrameCount,
-                    simFrameCount);
+                AnimationMath.PrependSetupBoneSamples(in boneSolverData, in sourceBoneIndices, in boneSamples, ref combinedBoneSamples, sourceFrameCount, setupFrameCount, simFrameCount);
                 boneSamples.Dispose();
                 boneSamples = combinedBoneSamples;
 
                 NativeArray<IKToggleFrameSample> combinedIKSamples = new NativeArray<IKToggleFrameSample>(checked(ikBoneIndices.Length * simFrameCount), Allocator.Persistent);
-                AnimationMath.PrependSetupIKSamples(
-                    in ikSamplesByTrack,
-                    ref combinedIKSamples,
-                    ikBoneIndices.Length,
-                    sourceFrameCount,
-                    setupFrameCount,
-                    simFrameCount);
+                AnimationMath.PrependSetupIKSamples(in ikSamplesByTrack, ref combinedIKSamples, ikBoneIndices.Length, sourceFrameCount, setupFrameCount, simFrameCount);
                 ikSamplesByTrack.Dispose();
                 ikSamplesByTrack = combinedIKSamples;
 
@@ -147,28 +86,8 @@ namespace UMT
             int lastReportedPercent = 0;
             for (int frame = 0; frame <= simLastFrame; ++frame)
             {
-                AnimationMath.TransformBonesForBakeFrame(
-                    ref transformContext,
-                    ref physicsContext,
-                    ref boneSolverData,
-                    ref ikControllers,
-                    in sourceTrackIndexByBone,
-                    in physicsControlledBoneSelection,
-                    in boneSamples,
-                    in ikControllerByBoneIndices,
-                    in ikTrackIndexByBone,
-                    in ikSamplesByTrack,
-                    frameCount,
-                    frame,
-                    options.frameRate,
-                    bakePhysics);
-                AnimationMath.WriteBakedBoneCurvesForFrame(
-                    in boneSolverData,
-                    in curveBoneIndices,
-                    in lastFrameWithSampleByBone,
-                    ref curveBuffers,
-                    frame,
-                    options.frameRate);
+                AnimationMath.TransformBonesForBakeFrame(ref transformContext, ref physicsContext, ref boneSolverData, ref ikControllers, in sourceTrackIndexByBone, in physicsControlledBoneSelection, in boneSamples, in ikControllerByBoneIndices, in ikTrackIndexByBone, in ikSamplesByTrack, frameCount, frame, options.frameRate, bakePhysics);
+                AnimationMath.WriteBakedBoneCurvesForFrame(in boneSolverData, in curveBoneIndices, in lastFrameWithSampleByBone, ref curveBuffers, frame, options.frameRate);
 
                 int completedFrames = frame + 1;
                 int progressPercent = completedFrames * 100 / frameCount;
@@ -185,22 +104,9 @@ namespace UMT
                 string path = bonePaths[boneIndex];
                 bool physicsControlled = bakePhysics && physicsControlledBoneSelection[boneIndex];
                 MMDBoneTransform.BoneSolverData runtimeData = boneSolverData[boneIndex];
-                bool writePosition = CanWriteBakedPositionCurves(
-                    in runtimeData,
-                    sourceBoneSelection,
-                    boneIndex,
-                    physicsControlled);
+                bool writePosition = CanWriteBakedPositionCurves(in runtimeData, sourceBoneSelection, boneIndex, physicsControlled);
                 bool writeRotation = physicsControlled || CanWriteRotationCurves(in runtimeData);
-                SetBakedBoneCurves(
-                    bones,
-                    path,
-                    boneIndex,
-                    curveBuffers,
-                    boneIndex,
-                    writePosition,
-                    writeRotation,
-                    setupFrameCount,
-                    options.frameRate);
+                SetBakedBoneCurves(bones, path, boneIndex, curveBuffers, boneIndex, writePosition, writeRotation, setupFrameCount, options.frameRate);
             }
             curveBuffers.Dispose();
             ikSamplesByTrack.Dispose();
@@ -218,33 +124,17 @@ namespace UMT
             sourceBoneSelection.Dispose();
         }
 
-        private static async Awaitable AddBakedBoneCurvesAsync(
-            UMTFrameBudget frameBudget,
-            VMDClipData bones,
-            VMDAnimation animation,
-            MMDTransformManager.SolverContext transformContext,
-            MMDPhysicsManager.PhysicsSolverContext physicsContext,
-            string[] bonePaths,
-            bool bakePhysics,
-            IndexResolver resolver,
-            VMDAnimationClipOptions options,
-            ProgressCallback progress)
+        private static async Task AddBakedBoneCurvesAsync(UMTFrameBudget frameBudget, VMDClipData bones, VMDAnimation animation, MMDTransformManager.SolverContext transformContext, MMDPhysicsManager.PhysicsSolverContext physicsContext, string[] bonePaths, bool bakePhysics, IndexResolver resolver, VMDAnimationClipOptions options, ProgressCallback progress)
         {
-            int setupFrameCount = bakePhysics && options.physicsWarmUpDuration > 0.0f
-                ? Mathf.Max(0, Mathf.RoundToInt(options.physicsWarmUpDuration * options.frameRate))
-                : 0;
+            int setupFrameCount = bakePhysics && options.physicsWarmUpDuration > 0.0f ? Mathf.Max(0, Mathf.RoundToInt(options.physicsWarmUpDuration * options.frameRate)) : 0;
 
             uint lastFrame = GetLastBakeFrame(animation);
             int frameCount = checked((int)lastFrame + 1);
-            NativeArray<MMDBoneTransform.BoneSolverData> boneSolverData =
-                transformContext.boneSolverData;
+            NativeArray<MMDBoneTransform.BoneSolverData> boneSolverData = transformContext.boneSolverData;
 
-            NativeArray<int> ikControllerByBoneIndices =
-                transformContext.ikControllerByBoneIndices;
-            NativeArray<MMDTransformManager.IKControllerData> ikControllers =
-                transformContext.ikControllers;
-            NativeArray<MMDTransformManager.IKLinkData> ikLinks =
-                transformContext.ikLinks;
+            NativeArray<int> ikControllerByBoneIndices = transformContext.ikControllerByBoneIndices;
+            NativeArray<MMDTransformManager.IKControllerData> ikControllers = transformContext.ikControllers;
+            NativeArray<MMDTransformManager.IKLinkData> ikLinks = transformContext.ikLinks;
             int boneCount = boneSolverData.Length;
             ReportProgress(progress, Stage.BoneConversion, 0, frameCount);
 
@@ -258,64 +148,28 @@ namespace UMT
             await frameBudget.YieldIfNeeded();
             NativeList<ResolvedBoneFrame> resolvedBoneFrames = await BuildSortedResolvedBoneFramesAsync(frameBudget, animation, resolver, boneSolverData, boneCount, frameCount, Allocator.Persistent);
             await frameBudget.YieldIfNeeded();
-            AnimationMath.BuildSourceBoneTracks(
-                in resolvedBoneFrames,
-                ref sourceBoneSelection,
-                ref sourceTrackIndexByBone,
-                ref sourceBoneIndices);
+            AnimationMath.BuildSourceBoneTracks(in resolvedBoneFrames, ref sourceBoneSelection, ref sourceTrackIndexByBone, ref sourceBoneIndices);
             await frameBudget.YieldIfNeeded();
             NativeArray<BoneSample> boneSamples = new NativeArray<BoneSample>(checked(sourceBoneIndices.Length * frameCount), Allocator.Persistent);
-            await AnimationMath.FillCompactBoneSamplesAsync(
-                frameBudget,
-                resolvedBoneFrames,
-                sourceTrackIndexByBone,
-                boneSamples,
-                frameCount);
+            await AnimationMath.FillCompactBoneSamplesAsync(frameBudget, resolvedBoneFrames, sourceTrackIndexByBone, boneSamples, frameCount);
             await frameBudget.YieldIfNeeded();
-            await AnimationMath.InterpolateCompactBoneSamplesAsync(
-                frameBudget,
-                boneSolverData,
-                sourceBoneIndices,
-                boneSamples,
-                frameCount,
-                lastFrameWithSampleByBone);
+            await AnimationMath.InterpolateCompactBoneSamplesAsync(frameBudget, boneSolverData, sourceBoneIndices, boneSamples, frameCount, lastFrameWithSampleByBone);
             await frameBudget.YieldIfNeeded();
 
             NativeList<ResolvedIKToggleFrame> resolvedIKToggleFrames = BuildSortedResolvedIKToggleFrames(animation, ref resolver, in ikControllerByBoneIndices, boneCount, frameCount, Allocator.Persistent);
             await frameBudget.YieldIfNeeded();
             NativeList<int> ikBoneIndices = new NativeList<int>(Allocator.Persistent);
             NativeArray<int> ikTrackIndexByBone = new NativeArray<int>(boneCount, Allocator.Persistent);
-            AnimationMath.BuildIKToggleTracks(
-                in resolvedIKToggleFrames,
-                ref ikTrackIndexByBone,
-                ref ikBoneIndices);
+            AnimationMath.BuildIKToggleTracks(in resolvedIKToggleFrames, ref ikTrackIndexByBone, ref ikBoneIndices);
             await frameBudget.YieldIfNeeded();
             NativeArray<IKToggleFrameSample> ikSamplesByTrack = new NativeArray<IKToggleFrameSample>(checked(ikBoneIndices.Length * frameCount), Allocator.Persistent);
-            AnimationMath.FillCompactIKToggleSamples(
-                in resolvedIKToggleFrames,
-                in ikTrackIndexByBone,
-                ref ikSamplesByTrack,
-                frameCount);
+            AnimationMath.FillCompactIKToggleSamples(in resolvedIKToggleFrames, in ikTrackIndexByBone, ref ikSamplesByTrack, frameCount);
             await frameBudget.YieldIfNeeded();
 
-            MMDPhysicsManager.BuildPhysicsControlledBoneSelection(
-                in physicsContext,
-                ref physicsControlledBoneSelection);
+            MMDPhysicsManager.BuildPhysicsControlledBoneSelection(in physicsContext, ref physicsControlledBoneSelection);
             await frameBudget.YieldIfNeeded();
 
-            AnimationMath.ResolveBakedCurveBones(
-                in boneSolverData,
-                in sourceBoneSelection,
-                in ikControllerByBoneIndices,
-                in ikControllers,
-                in ikLinks,
-                in physicsControlledBoneSelection,
-                ref curveBoneSelection,
-                ref lastFrameWithSampleByBone,
-                ref curveBoneIndices,
-                boneCount,
-                checked((int)lastFrame),
-                bakePhysics);
+            AnimationMath.ResolveBakedCurveBones(in boneSolverData, in sourceBoneSelection, in ikControllerByBoneIndices, in ikControllers, in ikLinks, in physicsControlledBoneSelection, ref curveBoneSelection, ref lastFrameWithSampleByBone, ref curveBoneIndices, boneCount, checked((int)lastFrame), bakePhysics);
             await frameBudget.YieldIfNeeded();
 
             int simLastFrame = checked((int)lastFrame);
@@ -325,25 +179,12 @@ namespace UMT
                 int simFrameCount = setupFrameCount + frameCount;
 
                 NativeArray<BoneSample> combinedBoneSamples = new NativeArray<BoneSample>(checked(sourceBoneIndices.Length * simFrameCount), Allocator.Persistent);
-                AnimationMath.PrependSetupBoneSamples(
-                    in boneSolverData,
-                    in sourceBoneIndices,
-                    in boneSamples,
-                    ref combinedBoneSamples,
-                    sourceFrameCount,
-                    setupFrameCount,
-                    simFrameCount);
+                AnimationMath.PrependSetupBoneSamples(in boneSolverData, in sourceBoneIndices, in boneSamples, ref combinedBoneSamples, sourceFrameCount, setupFrameCount, simFrameCount);
                 boneSamples.Dispose();
                 boneSamples = combinedBoneSamples;
                 await frameBudget.YieldIfNeeded();
                 NativeArray<IKToggleFrameSample> combinedIKSamples = new NativeArray<IKToggleFrameSample>(checked(ikBoneIndices.Length * simFrameCount), Allocator.Persistent);
-                AnimationMath.PrependSetupIKSamples(
-                    in ikSamplesByTrack,
-                    ref combinedIKSamples,
-                    ikBoneIndices.Length,
-                    sourceFrameCount,
-                    setupFrameCount,
-                    simFrameCount);
+                AnimationMath.PrependSetupIKSamples(in ikSamplesByTrack, ref combinedIKSamples, ikBoneIndices.Length, sourceFrameCount, setupFrameCount, simFrameCount);
                 ikSamplesByTrack.Dispose();
                 ikSamplesByTrack = combinedIKSamples;
                 await frameBudget.YieldIfNeeded();
@@ -374,28 +215,8 @@ namespace UMT
             int lastReportedPercent = 0;
             for (int frame = 0; frame <= simLastFrame; ++frame)
             {
-                AnimationMath.TransformBonesForBakeFrame(
-                    ref transformContext,
-                    ref physicsContext,
-                    ref boneSolverData,
-                    ref ikControllers,
-                    in sourceTrackIndexByBone,
-                    in physicsControlledBoneSelection,
-                    in boneSamples,
-                    in ikControllerByBoneIndices,
-                    in ikTrackIndexByBone,
-                    in ikSamplesByTrack,
-                    frameCount,
-                    frame,
-                    options.frameRate,
-                    bakePhysics);
-                AnimationMath.WriteBakedBoneCurvesForFrame(
-                    in boneSolverData,
-                    in curveBoneIndices,
-                    in lastFrameWithSampleByBone,
-                    ref curveBuffers,
-                    frame,
-                    options.frameRate);
+                AnimationMath.TransformBonesForBakeFrame(ref transformContext, ref physicsContext, ref boneSolverData, ref ikControllers, in sourceTrackIndexByBone, in physicsControlledBoneSelection, in boneSamples, in ikControllerByBoneIndices, in ikTrackIndexByBone, in ikSamplesByTrack, frameCount, frame, options.frameRate, bakePhysics);
+                AnimationMath.WriteBakedBoneCurvesForFrame(in boneSolverData, in curveBoneIndices, in lastFrameWithSampleByBone, ref curveBuffers, frame, options.frameRate);
 
                 int completedFrames = frame + 1;
                 int progressPercent = completedFrames * 100 / frameCount;
@@ -413,22 +234,9 @@ namespace UMT
                 string path = bonePaths[boneIndex];
                 bool physicsControlled = bakePhysics && physicsControlledBoneSelection[boneIndex];
                 MMDBoneTransform.BoneSolverData runtimeData = boneSolverData[boneIndex];
-                bool writePosition = CanWriteBakedPositionCurves(
-                    in runtimeData,
-                    sourceBoneSelection,
-                    boneIndex,
-                    physicsControlled);
+                bool writePosition = CanWriteBakedPositionCurves(in runtimeData, sourceBoneSelection, boneIndex, physicsControlled);
                 bool writeRotation = physicsControlled || CanWriteRotationCurves(in runtimeData);
-                SetBakedBoneCurves(
-                    bones,
-                    path,
-                    boneIndex,
-                    curveBuffers,
-                    boneIndex,
-                    writePosition,
-                    writeRotation,
-                    setupFrameCount,
-                    options.frameRate);
+                SetBakedBoneCurves(bones, path, boneIndex, curveBuffers, boneIndex, writePosition, writeRotation, setupFrameCount, options.frameRate);
                 await frameBudget.YieldIfNeeded();
             }
             curveBuffers.Dispose();
@@ -450,17 +258,7 @@ namespace UMT
         // The 7 baked bone channels, in the order stored in VMDClipData.curves[7 * boneIndex + channel].
         private const int k_BakedBoneChannelCount = 7;
 
-        private static void SetBakedBoneCurves(
-            VMDClipData bones,
-            string path,
-            int pathIndex,
-            BakedBoneCurveBuffers curveBuffers,
-            int boneIndex,
-            bool writePosition,
-            bool writeRotation,
-            int setupFrameCount,
-            float frameRate,
-            bool preserveTangents = false)
+        private static void SetBakedBoneCurves(VMDClipData bones, string path, int pathIndex, BakedBoneCurveBuffers curveBuffers, int boneIndex, bool writePosition, bool writeRotation, int setupFrameCount, float frameRate, bool preserveTangents = false)
         {
             int startIndex = curveBuffers.keyframeStartByBone[boneIndex];
             int keyframeCount = curveBuffers.keyframeCountByBone[boneIndex];
@@ -512,8 +310,7 @@ namespace UMT
                 return false;
             }
 
-            return (boneIndex < sourceBoneSelection.Length && sourceBoneSelection[boneIndex]) ||
-                runtimeData.translationConstraint;
+            return (boneIndex < sourceBoneSelection.Length && sourceBoneSelection[boneIndex]) || runtimeData.translationConstraint;
         }
 
         private static bool CanWriteRotationCurves(in MMDBoneTransform.BoneSolverData runtimeData)
@@ -533,11 +330,7 @@ namespace UMT
             public NativeArray<Keyframe> rotationZ;
             public NativeArray<Keyframe> rotationW;
 
-            public BakedBoneCurveBuffers(
-                NativeArray<int> keyframeStartByBone,
-                NativeArray<int> keyframeCountByBone,
-                int totalKeyframeCount,
-                Allocator allocator)
+            public BakedBoneCurveBuffers(NativeArray<int> keyframeStartByBone, NativeArray<int> keyframeCountByBone, int totalKeyframeCount, Allocator allocator)
             {
                 this.keyframeStartByBone = keyframeStartByBone;
                 this.keyframeCountByBone = keyframeCountByBone;

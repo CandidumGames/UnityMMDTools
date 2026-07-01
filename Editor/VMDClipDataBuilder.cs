@@ -4,12 +4,7 @@ using UnityEngine;
 namespace UMT.Editor
 {
     /// <summary>
-    /// Editor-only adapter that reconstructs a Unity <see cref="AnimationClip"/> from the raw curve data produced by
-    /// <see cref="VMDAnimationClipConverter"/>. The converter no longer builds clips directly because
-    /// <see cref="AnimationClip.SetCurve"/> is editor-only for non-legacy clips; this is the single place that calls
-    /// <c>SetCurve</c> / <see cref="AnimationUtility.SetEditorCurve"/> / <see cref="AnimationClip.EnsureQuaternionContinuity"/>,
-    /// so the editor importers keep producing identical <c>.anim</c> sub-assets while runtime playback consumes the
-    /// curve data directly.
+    /// Editor-only adapter that reconstructs a Unity <see cref="AnimationClip"/> from the raw curve data produced by <see cref="VMDAnimationClipConverter"/>. The converter no longer builds clips directly because <see cref="AnimationClip.SetCurve"/> is editor-only for non-legacy clips; this is the single place that calls <c>SetCurve</c> / <see cref="AnimationUtility.SetEditorCurve"/> / <see cref="AnimationClip.EnsureQuaternionContinuity"/>, so the editor importers keep producing identical <c>.anim</c> sub-assets while runtime playback consumes the curve data directly.
     /// </summary>
     public static class VMDClipDataBuilder
     {
@@ -28,8 +23,7 @@ namespace UMT.Editor
         };
 
         /// <summary>
-        /// Builds a non-legacy <see cref="AnimationClip"/> from model curve data (bones, morphs, and IK toggles for the
-        /// non-baked path), ensuring quaternion continuity for baked rotation channels.
+        /// Builds a non-legacy <see cref="AnimationClip"/> from model curve data (bones, morphs, and IK toggles for the non-baked path), ensuring quaternion continuity for baked rotation channels.
         /// </summary>
         /// <param name="data">The model curve data to reconstruct.</param>
         /// <param name="frameRate">Frame rate to stamp on the clip.</param>
@@ -58,8 +52,7 @@ namespace UMT.Editor
         }
 
         /// <summary>
-        /// Builds a non-legacy camera-rig <see cref="AnimationClip"/> from camera curve data, ensuring quaternion
-        /// continuity for the look-at target rotation.
+        /// Builds a non-legacy camera-rig <see cref="AnimationClip"/> from camera curve data, ensuring quaternion continuity for the look-at target rotation.
         /// </summary>
         /// <param name="data">The camera curve data to reconstruct.</param>
         /// <param name="frameRate">Frame rate to stamp on the clip.</param>

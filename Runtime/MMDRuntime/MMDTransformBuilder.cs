@@ -6,8 +6,7 @@ using UnityEngine;
 namespace UMT
 {
     /// <summary>
-    /// Result of building MMD transform and physics runtime components, reporting the created
-    /// managers, rigid bodies, joints, and counts of bone components, IK controllers, and constraints.
+    /// Result of building MMD transform and physics runtime components, reporting the created managers, rigid bodies, joints, and counts of bone components, IK controllers, and constraints.
     /// </summary>
     public struct MMDTransformBuildResult
     {
@@ -28,16 +27,12 @@ namespace UMT
     }
 
     /// <summary>
-    /// Adds and configures <see cref="MMDTransformManager"/>, <see cref="MMDPhysicsManager"/>,
-    /// <see cref="MMDBoneTransform"/>, <see cref="MMDRigidBody"/>, and <see cref="MMDJoint"/>
-    /// components from PMX bones, IK, constraints, rigid bodies, and joints.
+    /// Adds and configures <see cref="MMDTransformManager"/>, <see cref="MMDPhysicsManager"/>, <see cref="MMDBoneTransform"/>, <see cref="MMDRigidBody"/>, and <see cref="MMDJoint"/> components from PMX bones, IK, constraints, rigid bodies, and joints.
     /// </summary>
     public static class MMDTransformBuilder
     {
         /// <summary>
-        /// Builds the MMD transform/physics component layout on a model root: creates bone
-        /// components, parent/constraint/IK links, sorted pre- and after-physics passes, IK
-        /// handles, rigid bodies, joints, and an <see cref="Animator"/>.
+        /// Builds the MMD transform/physics component layout on a model root: creates bone components, parent/constraint/IK links, sorted pre- and after-physics passes, IK handles, rigid bodies, joints, and an <see cref="Animator"/>.
         /// </summary>
         /// <param name="model">Source PMX model providing bone, IK, constraint, rigid-body, and joint data.</param>
         /// <param name="root">Model root GameObject that receives the manager components.</param>
@@ -110,23 +105,19 @@ namespace UMT
                         boneTransforms[i].ik.links[linkIndex].bone = boneTransforms[pmxBone.ik.links[linkIndex].boneIndex];
                     }
 
-                    ikHandles.Add(new MMDIKHandleData
-                    {
-                        name = pmxBone.originalName.ToString(),
-                        controller = boneTransforms[i],
-                        target = boneTransforms[i].ik.target,
-                    });
+                    ikHandles.Add(new MMDIKHandleData { name = pmxBone.originalName.ToString(), controller = boneTransforms[i], target = boneTransforms[i].ik.target, });
                 }
             }
 
             result.transformManager.bones = boneTransforms;
-            result.transformManager.prePhysicsBones = BuildSortedPass(boneTransforms, false);
-            result.transformManager.afterPhysicsBones = BuildSortedPass(boneTransforms, true);
+            BuildSortedPasses(boneTransforms, out MMDBoneTransform[] prePhysicsBones, out MMDBoneTransform[] afterPhysicsBones);
+            result.transformManager.prePhysicsBones = prePhysicsBones;
+            result.transformManager.afterPhysicsBones = afterPhysicsBones;
             result.transformManager.ikHandles = ikHandles.ToArray();
             result.transformManager.model = model;
             result.transformManager.physicsManager = result.physicsManager;
             result.rigidBodies = BuildRigidBodies(model, root.transform, boneTransforms);
-            result.joints = BuildJoints(model, result.rigidBodies);
+            result.joints = BuildJoints(model, root.transform, result.rigidBodies);
             result.physicsManager.rigidBodies = result.rigidBodies;
             result.physicsManager.joints = result.joints;
             result.transformManager.InitializePhysics();
@@ -141,8 +132,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Refreshes every bone's initial pose from its current transform and rebuilds the
-        /// transform manager's native caches, typically after optional avatar creation.
+        /// Refreshes every bone's initial pose from its current transform and rebuilds the transform manager's native caches, typically after optional avatar creation.
         /// </summary>
         /// <param name="transformManager">Transform manager whose bones are refreshed.</param>
         public static void RefreshInitialTransforms(MMDTransformManager transformManager)
@@ -168,12 +158,7 @@ namespace UMT
             for (int i = 0; i < pmxBone.ik.links.Length; ++i)
             {
                 PMXIKLink link = pmxBone.ik.links[i];
-                ik.links[i] = new MMDBoneIKLinkData
-                {
-                    hasAngleLimit = link.hasAngleLimit,
-                    lowerLimit = link.lowerLimit,
-                    upperLimit = link.upperLimit,
-                };
+                ik.links[i] = new MMDBoneIKLinkData { hasAngleLimit = link.hasAngleLimit, lowerLimit = link.lowerLimit, upperLimit = link.upperLimit, };
                 if (link.hasAngleLimit)
                 {
                     NormalizeIKLimit(ik.links[i]);
@@ -187,88 +172,75 @@ namespace UMT
         {
             MMDRigidBody[] rigidBodies = new MMDRigidBody[model.rigidBodies.Length];
 
+            // Gather any pre-existing rigid-body components once (idempotent re-builds), keyed by index, so the per-body reuse lookup is O(1) instead of a per-body linear scan of the parent's children.
+            Dictionary<int, MMDRigidBody> existingByIndex = BuildExistingComponentMap(root.GetComponentsInChildren<MMDRigidBody>(true), model.rigidBodies.Length, static component => component.rigidBodyIndex);
+
             for (int i = 0; i < model.rigidBodies.Length; ++i)
             {
                 PMXRigidBody pmxRigidBody = model.rigidBodies[i];
                 MMDBoneTransform relatedBone = FindRelatedBone(pmxRigidBody, bones);
                 Transform parent = relatedBone != null ? relatedBone.transform : root;
-                MMDRigidBody rigidBody = FindRigidBodyComponent(parent, i);
-                if (rigidBody == null)
+                if (!existingByIndex.TryGetValue(i, out MMDRigidBody rigidBody) || rigidBody == null)
                 {
                     GameObject rigidBodyObject = new GameObject();
                     rigidBodyObject.transform.SetParent(parent, false);
                     rigidBody = rigidBodyObject.AddComponent<MMDRigidBody>();
                 }
+                else if (rigidBody.transform.parent != parent)
+                {
+                    rigidBody.transform.SetParent(parent, false);
+                }
 
-                rigidBody.gameObject.name = PMXUtilities.GetUniqueGeneratedObjectName(
-                    parent,
-                    pmxRigidBody.renamedName.ToString(),
-                    "RigidBody_",
-                    "RigidBody",
-                    i,
-                    rigidBody.transform);
+                rigidBody.gameObject.name = PMXUtilities.GetUniqueGeneratedObjectName(parent, pmxRigidBody.renamedName.ToString(), "RigidBody_", "RigidBody", i, rigidBody.transform);
                 rigidBody.SetData(i, pmxRigidBody, relatedBone);
                 float3 bonePosition = relatedBone != null ? relatedBone.initialModelPosition : float3.zero;
-                rigidBody.transform.SetLocalPositionAndRotation(
-                    pmxRigidBody.position - bonePosition,
-                    quaternion.EulerZXY(pmxRigidBody.rotation));
+                rigidBody.transform.SetLocalPositionAndRotation(pmxRigidBody.position - bonePosition, quaternion.EulerZXY(pmxRigidBody.rotation));
                 rigidBodies[i] = rigidBody;
             }
 
             return rigidBodies;
         }
 
-        private static MMDJoint[] BuildJoints(PMXModel model, MMDRigidBody[] rigidBodies)
+        private static MMDJoint[] BuildJoints(PMXModel model, Transform root, MMDRigidBody[] rigidBodies)
         {
             MMDJoint[] joints = new MMDJoint[model.joints.Length];
+
+            // Gather any pre-existing joint components once, keyed by index, so per-joint reuse is O(1).
+            Dictionary<int, MMDJoint> existingByIndex = BuildExistingComponentMap(root.GetComponentsInChildren<MMDJoint>(true), model.joints.Length, static component => component.jointIndex);
+
             for (int i = 0; i < model.joints.Length; ++i)
             {
                 PMXJoint pmxJoint = model.joints[i];
                 if (pmxJoint.rigidBodyAIndex < 0 || pmxJoint.rigidBodyAIndex >= rigidBodies.Length)
                 {
-                    throw new InvalidOperationException(
-                        $"PMX joint {i} has invalid first rigid body index {pmxJoint.rigidBodyAIndex}.");
+                    throw new InvalidOperationException($"PMX joint {i} has invalid first rigid body index {pmxJoint.rigidBodyAIndex}.");
                 }
                 if (pmxJoint.rigidBodyBIndex < 0 || pmxJoint.rigidBodyBIndex >= rigidBodies.Length)
                 {
-                    throw new InvalidOperationException(
-                        $"PMX joint {i} has invalid second rigid body index {pmxJoint.rigidBodyBIndex}.");
+                    throw new InvalidOperationException($"PMX joint {i} has invalid second rigid body index {pmxJoint.rigidBodyBIndex}.");
                 }
 
                 MMDRigidBody rigidBodyA = rigidBodies[pmxJoint.rigidBodyAIndex];
                 MMDRigidBody rigidBodyB = rigidBodies[pmxJoint.rigidBodyBIndex];
-                MMDJoint joint = FindJointComponent(rigidBodyA.transform, i);
-                if (joint == null)
+                if (!existingByIndex.TryGetValue(i, out MMDJoint joint) || joint == null)
                 {
                     GameObject jointObject = new GameObject();
                     jointObject.transform.SetParent(rigidBodyA.transform, false);
                     joint = jointObject.AddComponent<MMDJoint>();
                 }
+                else if (joint.transform.parent != rigidBodyA.transform)
+                {
+                    joint.transform.SetParent(rigidBodyA.transform, false);
+                }
 
-                joint.gameObject.name = PMXUtilities.GetUniqueGeneratedObjectName(
-                    rigidBodyA.transform,
-                    pmxJoint.renamedName.ToString(),
-                    "Joint_",
-                    "Joint",
-                    i,
-                    joint.transform);
+                joint.gameObject.name = PMXUtilities.GetUniqueGeneratedObjectName(rigidBodyA.transform, pmxJoint.renamedName.ToString(), "Joint_", "Joint", i, joint.transform);
                 joint.SetData(i, pmxJoint, rigidBodyA, rigidBodyB);
 
-                // The joint is parented to rigid body A. Place it relative to that parent in
-                // model space so the result is independent of the model root's world transform,
-                // matching how rigid bodies are positioned as local offsets under their bones.
-                float4x4 jointModel = float4x4.TRS(
-                    pmxJoint.position,
-                    quaternion.EulerZXY(pmxJoint.rotation),
-                    new float3(1.0f, 1.0f, 1.0f));
-                float4x4 rigidBodyAModel = float4x4.TRS(
-                    model.rigidBodies[pmxJoint.rigidBodyAIndex].position,
-                    quaternion.EulerZXY(model.rigidBodies[pmxJoint.rigidBodyAIndex].rotation),
-                    new float3(1.0f, 1.0f, 1.0f));
+                // The joint is parented to rigid body A. Place it relative to that parent in model space so the result is independent of the model root's world transform, matching how rigid bodies are positioned as local offsets under their bones.
+                float4x4 jointModel = float4x4.TRS(pmxJoint.position, quaternion.EulerZXY(pmxJoint.rotation), new float3(1.0f, 1.0f, 1.0f));
+                float4x4 rigidBodyAModel = float4x4.TRS(model.rigidBodies[pmxJoint.rigidBodyAIndex].position, quaternion.EulerZXY(model.rigidBodies[pmxJoint.rigidBodyAIndex].rotation), new float3(1.0f, 1.0f, 1.0f));
                 float4x4 jointLocal = math.mul(math.inverse(rigidBodyAModel), jointModel);
-                joint.transform.SetLocalPositionAndRotation(
-                    jointLocal.c3.xyz,
-                    new quaternion(new float3x3(jointLocal.c0.xyz, jointLocal.c1.xyz, jointLocal.c2.xyz)));
+                joint.transform.SetLocalPositionAndRotation(jointLocal.c3.xyz, new quaternion(new float3x3(jointLocal.c0.xyz, jointLocal.c1.xyz, jointLocal.c2.xyz)));
                 joints[i] = joint;
             }
 
@@ -285,32 +257,22 @@ namespace UMT
             return bones[rigidBody.relatedBoneIndex];
         }
 
-        private static MMDRigidBody FindRigidBodyComponent(Transform parent, int rigidBodyIndex)
+        /// <summary>
+        /// Builds an index-&gt;component map from the components already present under the model root, keeping the first component seen for each valid index so idempotent re-builds reuse existing objects in O(n).
+        /// </summary>
+        private static Dictionary<int, T> BuildExistingComponentMap<T>(T[] components, int count, Func<T, int> indexSelector)
         {
-            for (int i = 0; i < parent.childCount; ++i)
+            Dictionary<int, T> map = new Dictionary<int, T>(components.Length);
+            for (int i = 0; i < components.Length; ++i)
             {
-                MMDRigidBody component = parent.GetChild(i).GetComponent<MMDRigidBody>();
-                if (component != null && component.rigidBodyIndex == rigidBodyIndex)
+                int index = indexSelector(components[i]);
+                if (index >= 0 && index < count && !map.ContainsKey(index))
                 {
-                    return component;
+                    map.Add(index, components[i]);
                 }
             }
 
-            return null;
-        }
-
-        private static MMDJoint FindJointComponent(Transform parent, int jointIndex)
-        {
-            for (int i = 0; i < parent.childCount; ++i)
-            {
-                MMDJoint component = parent.GetChild(i).GetComponent<MMDJoint>();
-                if (component != null && component.jointIndex == jointIndex)
-                {
-                    return component;
-                }
-            }
-
-            return null;
+            return map;
         }
 
         private static void NormalizeIKLimit(MMDBoneIKLinkData link)
@@ -359,19 +321,29 @@ namespace UMT
             }
         }
 
-        private static MMDBoneTransform[] BuildSortedPass(MMDBoneTransform[] bones, bool afterPhysics)
+        /// <summary>
+        /// Partitions bones into pre- and after-physics passes in a single scan, then sorts each pass by transform level and bone index.
+        /// </summary>
+        private static void BuildSortedPasses(MMDBoneTransform[] bones, out MMDBoneTransform[] prePhysics, out MMDBoneTransform[] afterPhysics)
         {
-            List<MMDBoneTransform> sortedBones = new List<MMDBoneTransform>();
+            List<MMDBoneTransform> prePhysicsBones = new List<MMDBoneTransform>(bones.Length);
+            List<MMDBoneTransform> afterPhysicsBones = new List<MMDBoneTransform>();
             foreach (MMDBoneTransform bone in bones)
             {
-                if (bone.afterPhysics == afterPhysics)
+                if (bone.afterPhysics)
                 {
-                    sortedBones.Add(bone);
+                    afterPhysicsBones.Add(bone);
+                }
+                else
+                {
+                    prePhysicsBones.Add(bone);
                 }
             }
 
-            sortedBones.Sort(CompareBones);
-            return sortedBones.ToArray();
+            prePhysicsBones.Sort(CompareBones);
+            afterPhysicsBones.Sort(CompareBones);
+            prePhysics = prePhysicsBones.ToArray();
+            afterPhysics = afterPhysicsBones.ToArray();
         }
 
         private static int CompareBones(MMDBoneTransform x, MMDBoneTransform y)

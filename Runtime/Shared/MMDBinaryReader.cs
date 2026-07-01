@@ -11,8 +11,7 @@ using UnityEngine;
 namespace UMT
 {
     /// <summary>
-    /// Shared little-endian binary reader for MMD formats (PMX/VMD), providing ASCII, CP932,
-    /// PMX-text, primitive, vector/quaternion, and variable-width index reads over a stream.
+    /// Shared little-endian binary reader for MMD formats (PMX/VMD), providing ASCII, CP932, PMX-text, primitive, vector/quaternion, and variable-width index reads over a stream.
     /// </summary>
     public sealed class MMDBinaryReader : IDisposable
     {
@@ -211,9 +210,7 @@ namespace UMT
 
             byte[] bytes = m_Reader.ReadBytes(byteLength);
             FixedString128Bytes result = default;
-            string text = textEncoding == PMXHeader.TextEncoding.UTF16LE
-                ? Encoding.Unicode.GetString(bytes)
-                : Encoding.UTF8.GetString(bytes);
+            string text = textEncoding == PMXHeader.TextEncoding.UTF16LE ? Encoding.Unicode.GetString(bytes) : Encoding.UTF8.GetString(bytes);
             result.CopyFromTruncated(text);
             return result;
         }
@@ -261,8 +258,7 @@ namespace UMT
         }
 
         /// <summary>
-        /// Checks whether the stream has more data, validating that at least the requested number of bytes remains
-        /// when any data is left.
+        /// Checks whether the stream has more data, validating that at least the requested number of bytes remains when any data is left.
         /// </summary>
         /// <param name="byteCount">The minimum number of bytes expected to remain if the stream is not at its end.</param>
         /// <returns><c>true</c> if data remains; <c>false</c> when the stream is exactly at its end.</returns>

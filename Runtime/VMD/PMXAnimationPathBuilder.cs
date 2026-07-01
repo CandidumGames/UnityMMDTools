@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace UMT
 {
     /// <summary>
-    /// Precomputed Unity animation target paths for a PMX model: transform paths for bones and the
-    /// <see cref="UnityEngine.SkinnedMeshRenderer"/> paths affected by each morph.
+    /// Precomputed Unity animation target paths for a PMX model: transform paths for bones and the <see cref="UnityEngine.SkinnedMeshRenderer"/> paths affected by each morph.
     /// </summary>
     public sealed class PMXAnimationPaths
     {
@@ -16,7 +16,9 @@ namespace UMT
         /// <summary>Renderer paths affected by each morph, indexed by morph index. Empty for morphs that target no renderer.</summary>
         public string[][] morphRendererPaths = Array.Empty<string[]>();
 
-        /// <summary>Copies the contents of another <see cref="PMXAnimationPaths"/> instance into this one.</summary>
+        /// <summary>
+        /// Copies the contents of another <see cref="PMXAnimationPaths"/> instance into this one.
+        /// </summary>
         /// <param name="other">The other instance to copy from.</param>
         public void CopyFrom(PMXAnimationPaths other)
         {
@@ -35,8 +37,7 @@ namespace UMT
     }
 
     /// <summary>
-    /// Builds <see cref="PMXAnimationPaths"/> (bone transform paths and per-morph renderer paths) from a
-    /// <see cref="PMXModel"/>, matching the names and mesh grouping used when the model is imported.
+    /// Builds <see cref="PMXAnimationPaths"/> (bone transform paths and per-morph renderer paths) from a <see cref="PMXModel"/>, matching the names and mesh grouping used when the model is imported.
     /// </summary>
     internal static class PMXAnimationPathBuilder
     {
@@ -61,14 +62,13 @@ namespace UMT
         }
 
         /// <summary>
-        /// Asynchronously builds the bone and morph renderer animation paths for the given model, yielding control
-        /// back to the Unity main thread according to <paramref name="frameBudget"/>.
+        /// Asynchronously builds the bone and morph renderer animation paths for the given model, yielding control back to the Unity main thread according to <paramref name="frameBudget"/>.
         /// </summary>
         /// <param name="frameBudget">The frame budget used to yield control during long-running path construction.</param>
         /// <param name="model">The PMX model to build paths for.</param>
         /// <returns>The computed <see cref="PMXAnimationPaths"/>.</returns>
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="model"/> is null.</exception>
-        public static async Awaitable<PMXAnimationPaths> BuildAsync(UMTFrameBudget frameBudget, PMXModel model)
+        public static async Task<PMXAnimationPaths> BuildAsync(UMTFrameBudget frameBudget, PMXModel model)
         {
             if (model == null)
             {
@@ -90,10 +90,7 @@ namespace UMT
             string[] paths = new string[model.bones.Length];
             for (int i = 0; i < model.bones.Length; ++i)
             {
-                names[i] = PMXUtilities.GetGeneratedObjectName(
-                    model.bones[i].renamedName.ToString(),
-                    "Bone",
-                    i);
+                names[i] = PMXUtilities.GetGeneratedObjectName(model.bones[i].renamedName.ToString(), "Bone", i);
             }
 
             for (int i = 0; i < model.bones.Length; ++i)
@@ -104,8 +101,7 @@ namespace UMT
                 {
                     if (boneIndex >= model.bones.Length)
                     {
-                        throw new InvalidOperationException(
-                            $"PMX bone {i} has invalid parent index {boneIndex}.");
+                        throw new InvalidOperationException($"PMX bone {i} has invalid parent index {boneIndex}.");
                     }
 
                     parts.Push(names[boneIndex]);
@@ -118,16 +114,13 @@ namespace UMT
             return paths;
         }
 
-        private static async Awaitable<string[]> BuildBonePathsAsync(UMTFrameBudget frameBudget, PMXModel model)
+        private static async Task<string[]> BuildBonePathsAsync(UMTFrameBudget frameBudget, PMXModel model)
         {
             string[] names = new string[model.bones.Length];
             string[] paths = new string[model.bones.Length];
             for (int i = 0; i < model.bones.Length; ++i)
             {
-                names[i] = PMXUtilities.GetGeneratedObjectName(
-                    model.bones[i].renamedName.ToString(),
-                    "Bone",
-                    i);
+                names[i] = PMXUtilities.GetGeneratedObjectName(model.bones[i].renamedName.ToString(), "Bone", i);
             }
             await frameBudget.YieldIfNeeded();
 
@@ -139,8 +132,7 @@ namespace UMT
                 {
                     if (boneIndex >= model.bones.Length)
                     {
-                        throw new InvalidOperationException(
-                            $"PMX bone {i} has invalid parent index {boneIndex}.");
+                        throw new InvalidOperationException($"PMX bone {i} has invalid parent index {boneIndex}.");
                     }
 
                     parts.Push(names[boneIndex]);
@@ -166,8 +158,7 @@ namespace UMT
                 return paths;
             }
 
-            List<PMXMorphLinkedMaterialGroup> groups =
-                PMXMorphBuilder.BuildMorphLinkedMaterialGroups(model);
+            List<PMXMorphLinkedMaterialGroup> groups = PMXMorphBuilder.BuildMorphLinkedMaterialGroups(model);
             HashSet<uint>[] verticesByGroup = BuildVerticesByGroup(model, groups);
             string modelName = model.modelInfo.name.ToString();
             if (string.IsNullOrEmpty(modelName))
@@ -191,10 +182,7 @@ namespace UMT
                         continue;
                     }
 
-                    rendererPaths.Add(PMXMeshBuilder.GetMeshName(
-                        model,
-                        modelName,
-                        groups[groupIndex].materialIndices));
+                    rendererPaths.Add(PMXMeshBuilder.GetMeshName(model, modelName, groups[groupIndex].materialIndices));
                 }
 
                 paths[morphIndex] = rendererPaths.ToArray();
@@ -203,7 +191,7 @@ namespace UMT
             return paths;
         }
 
-        private static async Awaitable<string[][]> BuildMorphRendererPathsAsync(UMTFrameBudget frameBudget, PMXModel model)
+        private static async Task<string[][]> BuildMorphRendererPathsAsync(UMTFrameBudget frameBudget, PMXModel model)
         {
             string[][] paths = new string[model.morphs.Length][];
             for (int i = 0; i < paths.Length; ++i)
@@ -215,8 +203,7 @@ namespace UMT
                 return paths;
             }
 
-            List<PMXMorphLinkedMaterialGroup> groups =
-                PMXMorphBuilder.BuildMorphLinkedMaterialGroups(model);
+            List<PMXMorphLinkedMaterialGroup> groups = PMXMorphBuilder.BuildMorphLinkedMaterialGroups(model);
             HashSet<uint>[] verticesByGroup = BuildVerticesByGroup(model, groups);
             await frameBudget.YieldIfNeeded();
             string modelName = model.modelInfo.name.ToString();
@@ -241,10 +228,7 @@ namespace UMT
                         continue;
                     }
 
-                    rendererPaths.Add(PMXMeshBuilder.GetMeshName(
-                        model,
-                        modelName,
-                        groups[groupIndex].materialIndices));
+                    rendererPaths.Add(PMXMeshBuilder.GetMeshName(model, modelName, groups[groupIndex].materialIndices));
                 }
 
                 paths[morphIndex] = rendererPaths.ToArray();
@@ -254,9 +238,7 @@ namespace UMT
             return paths;
         }
 
-        private static HashSet<uint>[] BuildVerticesByGroup(
-            PMXModel model,
-            IReadOnlyList<PMXMorphLinkedMaterialGroup> groups)
+        private static HashSet<uint>[] BuildVerticesByGroup(PMXModel model, IReadOnlyList<PMXMorphLinkedMaterialGroup> groups)
         {
             int[] materialOffsets = new int[model.materials.Length];
             int offset = 0;
